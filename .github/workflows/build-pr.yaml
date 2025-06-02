@@ -33,13 +33,13 @@ jobs:
         run: go test ./...
 
       - name: Run go build
-        run: go build -o swagen
+        run: go build -o swagen-v2
 
       - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
           name: swagen
-          path: swagen
+          path: swagen-v2
 
   create-pr:
     needs: build
