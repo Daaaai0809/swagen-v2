@@ -63,8 +63,3 @@ func (m *Model) ReadPropertyName(name *string) error {
 
 	return nil
 }
-
-func (m *Model) ReadProperties() error {
-
-	return nil
-}
