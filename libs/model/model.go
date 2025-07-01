@@ -1,6 +1,10 @@
 package model
 
 import (
+	"errors"
+	"strings"
+
+	"github.com/Daaaai0809/swagen-v2/constants"
 	"github.com/Daaaai0809/swagen-v2/libs"
 	"github.com/Daaaai0809/swagen-v2/utils"
 )
@@ -53,7 +57,7 @@ func (mh *ModelHandler) HandleGenerateModelCommand() error {
 			return err
 		}
 
-		schema := libs.NewSchema(mh.Input, propertyName)
+		schema := libs.NewSchema(mh.Input, propertyName, nil, constants.MODE_MODEL)
 		if err := schema.ReadSchema(); err != nil {
 			return err
 		}
