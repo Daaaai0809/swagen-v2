@@ -23,7 +23,7 @@ type IInputMethods interface {
 
 type InputMethods struct{}
 
-func NewInputMethods() IInputMethods {
+func NewInputMethods() *InputMethods {
 	return &InputMethods{}
 }
 
