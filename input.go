@@ -22,6 +22,10 @@ type IInputMethods interface {
 
 type InputMethods struct{}
 
+func NewInputMethods() IInputMethods {
+	return &InputMethods{}
+}
+
 func (im *InputMethods) StringInput(result *string, label string, validation *ValidationFunc) error {
 	var prompt promptui.Prompt
 
