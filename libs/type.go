@@ -11,6 +11,8 @@ import (
 type Schema struct {
 	Input        utils.IInputMethods `yaml:"-"`
 	PropertyName string              `yaml:"-"`
+	ParentSchema *Schema             `yaml:"-"` // Optional parent schema for nested properties
+	Mode         constants.InputMode `yaml:"-"` // Mode of the schema (MODEL, SCHEMA, API)
 	Type         string              `yaml:"type"`
 	Format       string              `yaml:"format,omitempty"`
 	Properties   map[string]Schema   `yaml:"properties,omitempty"`
@@ -19,10 +21,12 @@ type Schema struct {
 	Items        *Schema             `yaml:"items,omitempty"`
 }
 
-func NewSchema(input utils.IInputMethods, propertyName string) Schema {
+func NewSchema(input utils.IInputMethods, propertyName string, parentSchema *Schema, mode constants.InputMode) Schema {
 	return Schema{
 		Input:        input,
 		PropertyName: propertyName,
+		ParentSchema: parentSchema,
+		Mode:         mode,
 		Type:         "",
 		Format:       "",
 		Properties:   make(map[string]Schema),
@@ -58,7 +62,7 @@ func (s *Schema) ReadRequired() error {
 	}
 
 	if isRequired {
-		s.Required = append(s.Required, s.PropertyName)
+		s.ParentSchema.Required = append(s.ParentSchema.Required, s.PropertyName)
 	}
 
 	return nil
@@ -93,7 +97,7 @@ func (s *Schema) ReadProperty() error {
 		return err
 	}
 
-	propertySchema := NewSchema(s.Input, propertyName)
+	propertySchema := NewSchema(s.Input, propertyName, s, s.Mode)
 	if err := propertySchema.ReadSchema(); err != nil {
 		return err
 	}
@@ -157,8 +161,10 @@ func (s *Schema) ReadSchema() error {
 		}
 	}
 
-	if err := s.ReadRequired(); err != nil {
-		return err
+	if s.Mode != constants.MODE_MODEL {
+		if err := s.ReadRequired(); err != nil {
+			return err
+		}
 	}
 
 	if err := s.ReadNullable(); err != nil {

@@ -1,6 +1,10 @@
 package model
 
 import (
+	"errors"
+	"strings"
+
+	"github.com/Daaaai0809/swagen-v2/constants"
 	"github.com/Daaaai0809/swagen-v2/libs"
 	"github.com/Daaaai0809/swagen-v2/utils"
 )
@@ -18,6 +22,31 @@ func NewModelHandler(input utils.IInputMethods) *ModelHandler {
 func (mh *ModelHandler) HandleGenerateModelCommand() error {
 	model := NewModel(mh.Input)
 
+	var validate utils.ValidationFunc = func(input string) error {
+		if input == "" {
+			return errors.New("file name is required")
+		}
+
+		// NOTE: 数字スタートを許可しない
+		if strings.HasPrefix(input, "0") {
+			return errors.New("file name cannot start with a number")
+		}
+
+		// NOTE: 英数字とアンダースコアのみを許可
+		for _, char := range input {
+			if !(('a' <= char && char <= 'z') || ('A' <= char && char <= 'Z') || ('0' <= char && char <= '9') || char == '_') {
+				return errors.New("file name can only contain alphanumeric characters and underscores")
+			}
+		}
+
+		return nil
+	}
+
+	var fileName string
+	if err := mh.Input.StringInput(&fileName, "Enter the model file name (without extension)", &validate); err != nil {
+		return err
+	}
+
 	if err := model.ReadTitle(); err != nil {
 		return err
 	}
@@ -28,7 +57,7 @@ func (mh *ModelHandler) HandleGenerateModelCommand() error {
 			return err
 		}
 
-		schema := libs.NewSchema(mh.Input, propertyName)
+		schema := libs.NewSchema(mh.Input, propertyName, nil, constants.MODE_MODEL)
 		if err := schema.ReadSchema(); err != nil {
 			return err
 		}
@@ -43,7 +72,7 @@ func (mh *ModelHandler) HandleGenerateModelCommand() error {
 		}
 	}
 
-	if err := utils.GenerateSchema(model, model.Title, utils.GetEnv("MODEL_PATH", "models/")); err != nil {
+	if err := utils.GenerateSchema(model, fileName, utils.GetEnv("MODEL_PATH", "models/")); err != nil {
 		return err
 	}
 
