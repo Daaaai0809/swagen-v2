@@ -11,7 +11,7 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "swagen",
+	Use: "swagen",
 	Long: `
 This is a CLI application that helps your OpenAPI schema definition.
 You can generate API endpoint schemas, models, and other related files.
