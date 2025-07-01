@@ -38,7 +38,7 @@ jobs:
       - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
-          name: swagen
+          name: binary
           path: swagen-v2
 
   create-pr:
@@ -53,7 +53,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: swagen
+          name: binary
           path: .
 
       - name: Configure Git
@@ -68,7 +68,7 @@ jobs:
           else
             git checkout -b update-binary-files
           fi
-          git add swagen
+          git add swagen-v2
           git diff --exit-code || git commit -m "Update binary files from artifact" && git push origin update-binary-files
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
