@@ -1,4 +1,4 @@
-package main
+package utils
 
 import (
 	"errors"
@@ -17,6 +17,7 @@ type IInputMethods interface {
 	UInt64Input(result *uint64, label string, validation *ValidationFunc) error
 	Float32Input(result *float32, label string, validation *ValidationFunc) error
 	Float64Input(result *float64, label string, validation *ValidationFunc) error
+	BooleanInput(result *bool, label string) error
 	SelectInput(result *string, label string, items []string) error
 }
 
@@ -223,10 +224,42 @@ func (im *InputMethods) Float64Input(result *float64, label string, validation *
 	return nil
 }
 
+func (im *InputMethods) BooleanInput(result *bool, label string) error {
+	prompt := promptui.Select{
+		Label: label,
+		Items: []string{"true", "false"},
+		Templates: &promptui.SelectTemplates{
+			Label:    "{{ . }}?",
+			Active:   "{{ . | cyan }}",
+			Inactive: "{{ . | faint }}",
+			Selected: "{{ . | green }}",
+		},
+	}
+
+	_, input, err := prompt.Run()
+	if err != nil {
+		return err
+	}
+
+	value, err := strconv.ParseBool(input)
+	if err != nil {
+		return err
+	}
+
+	*result = value
+	return nil
+}
+
 func (im *InputMethods) SelectInput(result *string, label string, items []string) error {
 	prompt := promptui.Select{
 		Label: label,
 		Items: items,
+		Templates: &promptui.SelectTemplates{
+			Label:    "{{ . }}?",
+			Active:   "{{ . | cyan }}",
+			Inactive: "{{ . | faint }}",
+			Selected: "{{ . | green }}",
+		},
 	}
 
 	index, _, err := prompt.Run()
