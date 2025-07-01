@@ -68,6 +68,7 @@ jobs:
           else
             git checkout -b update-binary-files
           fi
+          git pull origin main || true
           git add swagen-v2
           git diff --exit-code || git commit -m "Update binary files from artifact" && git push origin update-binary-files
         env:
