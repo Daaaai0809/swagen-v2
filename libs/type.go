@@ -8,35 +8,35 @@ import (
 	"github.com/Daaaai0809/swagen-v2/utils"
 )
 
-type Schema struct {
-	Input        utils.IInputMethods `yaml:"-"`
-	PropertyName string              `yaml:"-"`
-	ParentSchema *Schema             `yaml:"-"` // Optional parent schema for nested properties
-	Mode         constants.InputMode `yaml:"-"` // Mode of the schema (MODEL, SCHEMA, API)
-	Type         string              `yaml:"type"`
-	Format       string              `yaml:"format,omitempty"`
-	Properties   map[string]Schema   `yaml:"properties,omitempty"`
-	Required     []string            `yaml:"required,omitempty"`
-	Nullable     bool                `yaml:"nullable,omitempty"`
-	Items        *Schema             `yaml:"items,omitempty"`
+type Property struct {
+	Input          utils.IInputMethods `yaml:"-"`
+	PropertyName   string              `yaml:"-"`
+	ParentProperty *Property           `yaml:"-"` // Optional parent schema for nested properties
+	Mode           constants.InputMode `yaml:"-"` // Mode of the schema (MODEL, SCHEMA, API)
+	Type           string              `yaml:"type"`
+	Format         string              `yaml:"format,omitempty"`
+	Properties     map[string]Property `yaml:"properties,omitempty"`
+	Required       []string            `yaml:"required,omitempty"`
+	Nullable       bool                `yaml:"nullable,omitempty"`
+	Items          *Property           `yaml:"items,omitempty"`
 }
 
-func NewSchema(input utils.IInputMethods, propertyName string, parentSchema *Schema, mode constants.InputMode) Schema {
-	return Schema{
-		Input:        input,
-		PropertyName: propertyName,
-		ParentSchema: parentSchema,
-		Mode:         mode,
-		Type:         "",
-		Format:       "",
-		Properties:   make(map[string]Schema),
-		Required:     []string{},
-		Nullable:     false,
-		Items:        nil,
+func NewProperty(input utils.IInputMethods, propertyName string, parentProperty *Property, mode constants.InputMode) Property {
+	return Property{
+		Input:          input,
+		PropertyName:   propertyName,
+		ParentProperty: parentProperty,
+		Mode:           mode,
+		Type:           "",
+		Format:         "",
+		Properties:     make(map[string]Property),
+		Required:       []string{},
+		Nullable:       false,
+		Items:          nil,
 	}
 }
 
-func (s *Schema) ReadType() error {
+func (s *Property) ReadType() error {
 	err := s.Input.SelectInput(&s.Type, "Select Property Type", constants.FieldTypeList)
 	if err != nil {
 		return err
@@ -45,7 +45,7 @@ func (s *Schema) ReadType() error {
 	return nil
 }
 
-func (s *Schema) ReadFormat() error {
+func (s *Property) ReadFormat() error {
 	err := s.Input.SelectInput(&s.Format, "Select Property Format", constants.FormatList[s.Type])
 	if err != nil {
 		return err
@@ -54,7 +54,7 @@ func (s *Schema) ReadFormat() error {
 	return nil
 }
 
-func (s *Schema) ReadRequired() error {
+func (s *Property) ReadRequired() error {
 	isRequired := false
 	err := s.Input.BooleanInput(&isRequired, "Is this property required?")
 	if err != nil {
@@ -62,13 +62,13 @@ func (s *Schema) ReadRequired() error {
 	}
 
 	if isRequired {
-		s.ParentSchema.Required = append(s.ParentSchema.Required, s.PropertyName)
+		s.ParentProperty.Required = append(s.ParentProperty.Required, s.PropertyName)
 	}
 
 	return nil
 }
 
-func (s *Schema) ReadNullable() error {
+func (s *Property) ReadNullable() error {
 	err := s.Input.BooleanInput(&s.Nullable, "Is this property nullable?")
 	if err != nil {
 		return err
@@ -77,7 +77,7 @@ func (s *Schema) ReadNullable() error {
 	return nil
 }
 
-func (s *Schema) ReadProperty() error {
+func (s *Property) ReadProperty() error {
 	var propertyName string
 
 	var validate utils.ValidationFunc = func(input string) error {
@@ -97,14 +97,14 @@ func (s *Schema) ReadProperty() error {
 		return err
 	}
 
-	propertySchema := NewSchema(s.Input, propertyName, s, s.Mode)
-	if err := propertySchema.ReadSchema(); err != nil {
+	property := NewProperty(s.Input, propertyName, s, s.Mode)
+	if err := property.ReadAll(); err != nil {
 		return err
 	}
 
-	s.Properties[propertyName] = propertySchema
+	s.Properties[propertyName] = property
 
-	switch propertySchema.Type {
+	switch property.Type {
 	case constants.ARRAY_TYPE:
 		if err := s.ReadItem(); err != nil {
 			return err
@@ -118,31 +118,31 @@ func (s *Schema) ReadProperty() error {
 	return nil
 }
 
-func (s *Schema) ReadItem() error {
+func (s *Property) ReadItem() error {
 	if s.Type != constants.ARRAY_TYPE {
 		return errors.New("[ERROR] items can only be defined for array type")
 	}
 
 	if s.Items == nil {
-		s.Items = &Schema{
+		s.Items = &Property{
 			Input:      s.Input,
 			Type:       "",
 			Format:     "",
-			Properties: make(map[string]Schema),
+			Properties: make(map[string]Property),
 			Required:   []string{},
 			Nullable:   false,
 			Items:      nil,
 		}
 	}
 
-	if err := s.Items.ReadSchema(); err != nil {
+	if err := s.Items.ReadProperty(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *Schema) ReadSchema() error {
+func (s *Property) ReadAll() error {
 	if err := s.ReadType(); err != nil {
 		return err
 	}

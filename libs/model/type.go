@@ -9,10 +9,10 @@ import (
 )
 
 type Model struct {
-	Input      utils.IInputMethods    `yaml:"-"`
-	Title      string                 `yaml:"title,omitempty"`
-	Type       string                 `yaml:"type"`
-	Properties map[string]libs.Schema `yaml:"properties,omitempty"`
+	Input      utils.IInputMethods      `yaml:"-"`
+	Title      string                   `yaml:"title,omitempty"`
+	Type       string                   `yaml:"type"`
+	Properties map[string]libs.Property `yaml:"properties,omitempty"`
 }
 
 func NewModel(input utils.IInputMethods) *Model {
@@ -20,7 +20,7 @@ func NewModel(input utils.IInputMethods) *Model {
 		Input:      input,
 		Title:      "",
 		Type:       constants.OBJECT_TYPE,
-		Properties: make(map[string]libs.Schema),
+		Properties: make(map[string]libs.Property),
 	}
 }
 
