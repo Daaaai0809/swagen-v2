@@ -30,7 +30,7 @@ func NewInputMethods() *InputMethods {
 func (im *InputMethods) StringInput(result *string, label string, validation *ValidationFunc) error {
 	var prompt promptui.Prompt
 
-	if validation != nil {
+	if validation == nil {
 		prompt = promptui.Prompt{
 			Label: label,
 		}
