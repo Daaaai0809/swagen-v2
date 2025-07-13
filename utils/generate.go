@@ -3,16 +3,9 @@ package utils
 import (
 	"os"
 	"strings"
-
-	"gopkg.in/yaml.v2"
 )
 
-func GenerateSchema(input interface{}, fileName, path string) error {
-	data, err := yaml.Marshal(input)
-	if err != nil {
-		return err
-	}
-
+func GenerateSchema(input []byte, fileName, path string) error {
 	var name string
 	if strings.HasSuffix(path, "/") {
 		name = path + fileName + ".yaml"
@@ -26,7 +19,7 @@ func GenerateSchema(input interface{}, fileName, path string) error {
 		}
 	}
 
-	if err := os.WriteFile(name, data, 0644); err != nil {
+	if err := os.WriteFile(name, input, 0644); err != nil {
 		return err
 	}
 
