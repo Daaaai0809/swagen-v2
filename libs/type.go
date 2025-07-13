@@ -9,30 +9,33 @@ import (
 )
 
 type Property struct {
-	Input          utils.IInputMethods `yaml:"-"`
-	PropertyName   string              `yaml:"-"`
-	ParentProperty *Property           `yaml:"-"` // Optional parent schema for nested properties
-	Mode           constants.InputMode `yaml:"-"` // Mode of the schema (MODEL, SCHEMA, API)
-	Type           string              `yaml:"type"`
-	Format         string              `yaml:"format,omitempty"`
-	Properties     map[string]Property `yaml:"properties,omitempty"`
-	Required       []string            `yaml:"required,omitempty"`
-	Nullable       bool                `yaml:"nullable,omitempty"`
-	Items          *Property           `yaml:"items,omitempty"`
+	Input          utils.IInputMethods  `yaml:"-"`
+	PropertyName   string               `yaml:"-"`
+	ParentProperty *Property            `yaml:"-"` // Optional parent schema for nested properties
+	Mode           constants.InputMode  `yaml:"-"` // Mode of the schema (MODEL, SCHEMA, API)
+	Type           string               `yaml:"type,omitempty"`
+	Format         string               `yaml:"format,omitempty"`
+	Properties     map[string]*Property `yaml:"properties,omitempty"`
+	Required       []string             `yaml:"required,omitempty"`
+	Nullable       bool                 `yaml:"nullable,omitempty"`
+	Items          *Property            `yaml:"items,omitempty"`
+	Example        string               `yaml:"example,omitempty"`
+	Ref            string               `yaml:"$ref,omitempty"` // Reference to another schema
 }
 
-func NewProperty(input utils.IInputMethods, propertyName string, parentProperty *Property, mode constants.InputMode) Property {
-	return Property{
+func NewProperty(input utils.IInputMethods, propertyName string, parentProperty *Property, mode constants.InputMode) *Property {
+	return &Property{
 		Input:          input,
 		PropertyName:   propertyName,
 		ParentProperty: parentProperty,
 		Mode:           mode,
 		Type:           "",
 		Format:         "",
-		Properties:     make(map[string]Property),
+		Properties:     make(map[string]*Property),
 		Required:       []string{},
 		Nullable:       false,
 		Items:          nil,
+		Example:        "",
 	}
 }
 
@@ -128,10 +131,11 @@ func (s *Property) ReadItem() error {
 			Input:      s.Input,
 			Type:       "",
 			Format:     "",
-			Properties: make(map[string]Property),
+			Properties: make(map[string]*Property),
 			Required:   []string{},
 			Nullable:   false,
 			Items:      nil,
+			Example:    "",
 		}
 	}
 
@@ -139,6 +143,16 @@ func (s *Property) ReadItem() error {
 		return err
 	}
 
+	return nil
+}
+
+func (s *Property) ReadExample() error {
+	var example string
+	err := s.Input.StringInput(&example, "Example Value", nil)
+	if err != nil {
+		return err
+	}
+	s.Example = example
 	return nil
 }
 
@@ -192,6 +206,20 @@ func (s *Property) ReadAll() error {
 	} else if s.Type == constants.ARRAY_TYPE {
 		if err := s.ReadItem(); err != nil {
 			return err
+		}
+	}
+
+	if constants.IsExamplableType(s.Type) {
+		isAddExample := false
+		err := s.Input.BooleanInput(&isAddExample, "Do you want to add an example value for this property?")
+		if err != nil {
+			return err
+		}
+
+		if isAddExample {
+			if err := s.ReadExample(); err != nil {
+				return err
+			}
 		}
 	}
 
