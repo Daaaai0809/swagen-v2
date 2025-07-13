@@ -17,3 +17,12 @@ var FieldTypeList = []string{
 	ARRAY_TYPE,
 	OBJECT_TYPE,
 }
+
+func IsExamplableType(fieldType string) bool {
+	switch fieldType {
+	case STRING_TYPE, NUMBER_TYPE, INTEGER_TYPE, BOOLEAN_TYPE:
+		return true
+	default:
+		return false
+	}
+}
