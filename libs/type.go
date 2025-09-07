@@ -80,6 +80,25 @@ func (s *Property) ReadNullable() error {
 	return nil
 }
 
+func (s *Property) InputRef() error {
+	ref, err := utils.InteractiveResolveRef(s.Input, s.Mode)
+	if err != nil {
+		return err
+	}
+	if ref == "" {
+		return errors.New("empty reference returned")
+	}
+	s.Ref = ref
+	// when $ref is set, other siblings like type should be omitted in output
+	s.Type = ""
+	s.Format = ""
+	s.Properties = nil
+	s.Items = nil
+	s.Nullable = false
+	s.Example = ""
+	return nil
+}
+
 func (s *Property) ReadProperty() error {
 	var propertyName string
 
@@ -101,6 +120,26 @@ func (s *Property) ReadProperty() error {
 	}
 
 	property := NewProperty(s.Input, propertyName, s, s.Mode)
+	if s.Mode != constants.MODE_MODEL {
+		var useRef bool
+		if err := s.Input.BooleanInput(&useRef, "Do you want to reference another schema?"); err != nil {
+			return err
+		}
+
+		if useRef {
+			if err := property.InputRef(); err != nil {
+				return err
+			}
+			// ask required for referenced property
+			if err := property.ReadRequired(); err != nil {
+				return err
+			}
+			// attach the referenced property to parent
+			s.Properties[propertyName] = property
+			return nil
+		}
+	}
+
 	if err := property.ReadAll(); err != nil {
 		return err
 	}

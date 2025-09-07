@@ -72,7 +72,7 @@ func (mh *ModelHandler) HandleGenerateModelCommand() error {
 		}
 	}
 
-	if err := model.GenerateModel(fileName, utils.GetEnv("MODEL_PATH", "models/")); err != nil {
+	if err := model.GenerateModel(fileName, utils.GetEnv(utils.MODEL_PATH, "models/")); err != nil {
 		return err
 	}
 

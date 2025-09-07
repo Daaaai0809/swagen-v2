@@ -53,7 +53,7 @@ func (im *InputMethods) StringInput(result *string, label string, validation *Va
 func (im *InputMethods) IntInput(result *int, label string, validation *ValidationFunc) error {
 	var prompt promptui.Prompt
 
-	if validation != nil {
+	if validation == nil {
 		prompt = promptui.Prompt{
 			Label: label,
 		}
@@ -82,7 +82,7 @@ func (im *InputMethods) IntInput(result *int, label string, validation *Validati
 func (im *InputMethods) UInt32Input(result *uint32, label string, validation *ValidationFunc) error {
 	var prompt promptui.Prompt
 
-	if validation != nil {
+	if validation == nil {
 		prompt = promptui.Prompt{
 			Label: label,
 		}
@@ -111,7 +111,7 @@ func (im *InputMethods) UInt32Input(result *uint32, label string, validation *Va
 func (im *InputMethods) Int64Input(result *int64, label string, validation *ValidationFunc) error {
 	var prompt promptui.Prompt
 
-	if validation != nil {
+	if validation == nil {
 		prompt = promptui.Prompt{
 			Label: label,
 		}
@@ -140,7 +140,7 @@ func (im *InputMethods) Int64Input(result *int64, label string, validation *Vali
 func (im *InputMethods) UInt64Input(result *uint64, label string, validation *ValidationFunc) error {
 	var prompt promptui.Prompt
 
-	if validation != nil {
+	if validation == nil {
 		prompt = promptui.Prompt{
 			Label: label,
 		}
@@ -169,7 +169,7 @@ func (im *InputMethods) UInt64Input(result *uint64, label string, validation *Va
 func (im *InputMethods) Float32Input(result *float32, label string, validation *ValidationFunc) error {
 	var prompt promptui.Prompt
 
-	if validation != nil {
+	if validation == nil {
 		prompt = promptui.Prompt{
 			Label: label,
 		}
@@ -198,7 +198,7 @@ func (im *InputMethods) Float32Input(result *float32, label string, validation *
 func (im *InputMethods) Float64Input(result *float64, label string, validation *ValidationFunc) error {
 	var prompt promptui.Prompt
 
-	if validation != nil {
+	if validation == nil {
 		prompt = promptui.Prompt{
 			Label: label,
 		}
