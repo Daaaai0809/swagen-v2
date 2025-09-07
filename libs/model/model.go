@@ -57,11 +57,11 @@ func (mh *ModelHandler) HandleGenerateModelCommand() error {
 			return err
 		}
 
-		schema := libs.NewSchema(mh.Input, propertyName, nil, constants.MODE_MODEL)
-		if err := schema.ReadSchema(); err != nil {
+		property := libs.NewProperty(mh.Input, propertyName, nil, constants.MODE_MODEL)
+		if err := property.ReadAll(); err != nil {
 			return err
 		}
-		model.Properties[propertyName] = schema
+		model.Properties[propertyName] = property
 
 		isAdd := false
 		if err := mh.Input.BooleanInput(&isAdd, "Do you want to add another property? (Root Property)"); err != nil {
@@ -72,7 +72,7 @@ func (mh *ModelHandler) HandleGenerateModelCommand() error {
 		}
 	}
 
-	if err := utils.GenerateSchema(model, fileName, utils.GetEnv("MODEL_PATH", "models/")); err != nil {
+	if err := model.GenerateModel(fileName, utils.GetEnv(utils.MODEL_PATH, "models/")); err != nil {
 		return err
 	}
 

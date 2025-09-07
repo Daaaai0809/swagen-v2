@@ -6,13 +6,14 @@ import (
 	"github.com/Daaaai0809/swagen-v2/constants"
 	"github.com/Daaaai0809/swagen-v2/libs"
 	"github.com/Daaaai0809/swagen-v2/utils"
+	"gopkg.in/yaml.v2"
 )
 
 type Model struct {
-	Input      utils.IInputMethods    `yaml:"-"`
-	Title      string                 `yaml:"title,omitempty"`
-	Type       string                 `yaml:"type"`
-	Properties map[string]libs.Schema `yaml:"properties,omitempty"`
+	Input      utils.IInputMethods       `yaml:"-"`
+	Title      string                    `yaml:"title,omitempty"`
+	Type       string                    `yaml:"type"`
+	Properties map[string]*libs.Property `yaml:"properties,omitempty"`
 }
 
 func NewModel(input utils.IInputMethods) *Model {
@@ -20,7 +21,7 @@ func NewModel(input utils.IInputMethods) *Model {
 		Input:      input,
 		Title:      "",
 		Type:       constants.OBJECT_TYPE,
-		Properties: make(map[string]libs.Schema),
+		Properties: make(map[string]*libs.Property),
 	}
 }
 
@@ -58,6 +59,19 @@ func (m *Model) ReadPropertyName(name *string) error {
 
 	err := m.Input.StringInput(name, "Property Name", &validate)
 	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Model) GenerateModel(fileName string, path string) error {
+	data, err := yaml.Marshal(m)
+	if err != nil {
+		return err
+	}
+
+	if err := utils.GenerateSchema(data, fileName, path); err != nil {
 		return err
 	}
 

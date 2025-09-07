@@ -1,0 +1,7 @@
+TestRequest:
+  properties:
+    id:
+      type: string
+      format: uuid
+  required:
+  - id
