@@ -9,20 +9,20 @@ import (
 type API struct {
 	Input utils.IInputMethods `yaml:"-"`
 
-	OperationID string                `yaml:"operationId,omitempty"`
-	Summary     string                `yaml:"summary,omitempty"`
-	Description string                `yaml:"description,omitempty"`
-	Tags        []string              `yaml:"tags,omitempty"`
-	Parameters  []*Parameter `yaml:"parameters,omitempty"`
-	RequestBody *RequestBody          `yaml:"requestBody,omitempty"`
-	Responses   map[string]*Response  `yaml:"responses,omitempty"`
+	OperationID string               `yaml:"operationId,omitempty"`
+	Summary     string               `yaml:"summary,omitempty"`
+	Description string               `yaml:"description,omitempty"`
+	Tags        []string             `yaml:"tags,omitempty"`
+	Parameters  []*Parameter         `yaml:"parameters,omitempty"`
+	RequestBody *RequestBody         `yaml:"requestBody,omitempty"`
+	Responses   map[string]*Response `yaml:"responses,omitempty"`
 }
 
 func NewAPI() *API {
 	return &API{
-		Parameters: []*Parameter{},
+		Parameters:  []*Parameter{},
 		RequestBody: nil,
-		Responses:  make(map[string]*Response),
+		Responses:   make(map[string]*Response),
 	}
 }
 

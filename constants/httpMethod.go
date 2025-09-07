@@ -9,13 +9,13 @@ const (
 	HTTP_HEAD    = "HEAD"
 	HTTP_OPTIONS = "OPTIONS"
 
-	_HTTP_GET    = "get"
-	_HTTP_POST   = "post"
-	_HTTP_PUT    = "put"
-	_HTTP_DELETE = "delete"
-	_HTTP_PATCH  = "patch"
-	_HTTP_HEAD   = "head"
-	_HTTP_OPTIONS= "options"
+	_HTTP_GET     = "get"
+	_HTTP_POST    = "post"
+	_HTTP_PUT     = "put"
+	_HTTP_DELETE  = "delete"
+	_HTTP_PATCH   = "patch"
+	_HTTP_HEAD    = "head"
+	_HTTP_OPTIONS = "options"
 )
 
 var HTTPMethods = []string{
@@ -27,7 +27,7 @@ var HTTPMethods = []string{
 	HTTP_HEAD,
 	HTTP_OPTIONS,
 }
-	
+
 var HTTPMethodsMap = map[string]string{
 	HTTP_GET:     _HTTP_GET,
 	HTTP_POST:    _HTTP_POST,
@@ -37,5 +37,3 @@ var HTTPMethodsMap = map[string]string{
 	HTTP_HEAD:    _HTTP_HEAD,
 	HTTP_OPTIONS: _HTTP_OPTIONS,
 }
-
-
