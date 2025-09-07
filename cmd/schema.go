@@ -8,7 +8,7 @@ import (
 
 var schemaCmd = &cobra.Command{
 	Use:   "schema",
-	Short: "Generate a schema file",
+	Short: "Generate a Request/Response Schema file",
 	Long:  `Interactively generate a schema file for your models.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		inputMethods := utils.NewInputMethods()
