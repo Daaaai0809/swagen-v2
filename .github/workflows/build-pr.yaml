@@ -85,9 +85,3 @@ jobs:
           branch: "update-binary-files"
           base: "main"
           delete-branch: true
-
-      - name: Auto-merge PR
-        uses: pascalgn/automerge-action@v0.14.3
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          merge-method: squash
