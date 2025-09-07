@@ -17,10 +17,10 @@ var modelCmd = &cobra.Command{
 		input := utils.NewInputMethods()
 		modelHandler := model.NewModelHandler(input)
 		if err := modelHandler.HandleGenerateModelCommand(); err != nil {
-			cmd.PrintErrf("Error generating model schema: %v\n", err)
+			cmd.PrintErrf("[ERROR] Generating model schema: %v\n", err)
 			return
 		}
-		cmd.Println("Model schema generated successfully.")
+		cmd.Println("[INFO] Model schema generated successfully.")
 	},
 }
 
