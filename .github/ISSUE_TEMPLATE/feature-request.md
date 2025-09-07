@@ -9,12 +9,12 @@ assignees: ''
 
 ## Why ? (背景)
 
-- Description here why do you suggest this idea
+- Describe here why do you suggest this idea
 
 ## How ? (どのように行うか)
 
-- Description here how do you implement this idea
+- Describe here how do you implement this idea
 
 ## Value (提供される価値)
 
-- Description here what this idea's value
+- Describe here what this idea's value
