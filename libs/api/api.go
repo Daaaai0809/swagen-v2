@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/Daaaai0809/swagen-v2/constants"
 	"github.com/Daaaai0809/swagen-v2/utils"
 )
 
@@ -44,13 +45,15 @@ func (ah *APIHandler) HandleGenerateAPICommand() error {
 	}
 
 	api := NewAPI()
+	// Ensure Input is set before any read methods to avoid nil dereference
+	api.Input = ah.Input
 
 	if err := api.ReadOperationID(); err != nil {
 		return err
 	}
 
 	var method string
-	if err := ah.Input.SelectInput(&method, "Select the HTTP method for the API", []string{"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"}); err != nil {
+	if err := ah.Input.SelectInput(&method, "Select the HTTP method for the API", constants.HTTPMethods); err != nil {
 		return err
 	}
 
@@ -124,7 +127,7 @@ func (ah *APIHandler) HandleGenerateAPICommand() error {
 		}
 	}
 
-	if err := api.GenerateFile(fileName, method, utils.GetEnv(utils.API_PATH, "path/")); err != nil {
+	if err := api.GenerateFile(fileName, constants.HTTPMethodsMap[method], utils.GetEnv(utils.API_PATH, "path/")); err != nil {
 		return err
 	}
 

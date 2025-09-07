@@ -13,45 +13,37 @@ type API struct {
 	Summary     string                `yaml:"summary,omitempty"`
 	Description string                `yaml:"description,omitempty"`
 	Tags        []string              `yaml:"tags,omitempty"`
-	Parameters  map[string]*Parameter `yaml:"parameters,omitempty"`
+	Parameters  []*Parameter `yaml:"parameters,omitempty"`
 	RequestBody *RequestBody          `yaml:"requestBody,omitempty"`
 	Responses   map[string]*Response  `yaml:"responses,omitempty"`
 }
 
 func NewAPI() *API {
 	return &API{
-		Parameters: make(map[string]*Parameter),
+		Parameters: []*Parameter{},
+		RequestBody: nil,
 		Responses:  make(map[string]*Response),
 	}
 }
 
 func (a *API) ReadOperationID() error {
-	var operationID string
-	if err := a.Input.StringInput(&operationID, "Enter the Operation ID for the API (optional)", nil); err != nil {
+	if err := a.Input.StringInput(&a.OperationID, "Enter the Operation ID for the API (optional)", nil); err != nil {
 		return err
 	}
-
-	a.OperationID = operationID
 	return nil
 }
 
 func (a *API) ReadSummary() error {
-	var summary string
-	if err := a.Input.StringInput(&summary, "Enter a brief summary of the API (optional)", nil); err != nil {
+	if err := a.Input.StringInput(&a.Summary, "Enter a brief summary of the API (optional)", nil); err != nil {
 		return err
 	}
-
-	a.Summary = summary
 	return nil
 }
 
 func (a *API) ReadDescription() error {
-	var description string
-	if err := a.Input.StringInput(&description, "Enter a detailed description of the API (optional)", nil); err != nil {
+	if err := a.Input.StringInput(&a.Description, "Enter a detailed description of the API (optional)", nil); err != nil {
 		return err
 	}
-
-	a.Description = description
 	return nil
 }
 
@@ -85,6 +77,8 @@ func (a *API) ReadParameter() error {
 	if err := param.Schema.ReadAll(); err != nil {
 		return err
 	}
+
+	a.Parameters = append(a.Parameters, param)
 
 	return nil
 }
@@ -135,6 +129,11 @@ func (a *API) ReadRequestBody() error {
 func (a *API) ReadResponse() error {
 	resp := NewResponse(a.Input)
 
+	var httpStatus string
+	if err := resp.Input.SelectInput(&httpStatus, "Select the HTTP status code for the response", constants.HTTPStatusList); err != nil {
+		return err
+	}
+
 	var description string
 	if err := resp.Input.StringInput(&description, "Enter a description for the response (optional)", nil); err != nil {
 		return err
@@ -167,7 +166,7 @@ func (a *API) ReadResponse() error {
 		}
 	}
 
-	a.Responses[description] = resp
+	a.Responses[httpStatus] = resp
 	return nil
 }
 
@@ -300,15 +299,21 @@ func (ps *ParamSchema) ReadAll() error {
 		return err
 	}
 
-	if err := ps.ReadFormat(); err != nil {
+	isReadFormat := false
+	if err := ps.Input.BooleanInput(&isReadFormat, "Do you want to set a format for the parameter?"); err != nil {
 		return err
+	}
+	if isReadFormat && constants.IsFormatableType(ps.Type) {
+		if err := ps.ReadFormat(); err != nil {
+			return err
+		}
 	}
 
 	isReadExample := false
 	if err := ps.Input.BooleanInput(&isReadExample, "Do you want to add an example value for the parameter?"); err != nil {
 		return err
 	}
-	if isReadExample {
+	if isReadExample && constants.IsExamplableType(ps.Type) {
 		if err := ps.ReadExample(); err != nil {
 			return err
 		}
@@ -318,7 +323,7 @@ func (ps *ParamSchema) ReadAll() error {
 	if err := ps.Input.BooleanInput(&isReadMax, "Do you want to set a maximum value for the parameter?"); err != nil {
 		return err
 	}
-	if isReadMax {
+	if isReadMax && constants.IsMaxMinApplicableType(ps.Type) {
 		if err := ps.ReadMax(); err != nil {
 			return err
 		}
@@ -328,7 +333,7 @@ func (ps *ParamSchema) ReadAll() error {
 	if err := ps.Input.BooleanInput(&isReadMin, "Do you want to set a minimum value for the parameter?"); err != nil {
 		return err
 	}
-	if isReadMin {
+	if isReadMin && constants.IsMaxMinApplicableType(ps.Type) {
 		if err := ps.ReadMin(); err != nil {
 			return err
 		}
@@ -437,7 +442,7 @@ func (mts *MediaTypeSchema) ReadAll() error {
 	if err := mts.Input.BooleanInput(&isReadFormat, "Do you want to set a format for the schema?"); err != nil {
 		return err
 	}
-	if isReadFormat {
+	if isReadFormat && constants.IsFormatableType(mts.Type) {
 		if err := mts.ReadFormat(); err != nil {
 			return err
 		}
