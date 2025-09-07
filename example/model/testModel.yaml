@@ -1,0 +1,10 @@
+title: TestModel
+type: object
+properties:
+  id:
+    type: string
+    format: uuid
+    example: image
+  image:
+    type: string
+    format: binary
