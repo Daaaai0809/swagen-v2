@@ -7,15 +7,15 @@ import (
 )
 
 type API struct {
-	Input       utils.IInputMethods `yaml:"-"`
+	Input utils.IInputMethods `yaml:"-"`
 
-	OperationID string              `yaml:"operationId,omitempty"`
-	Summary     string              `yaml:"summary,omitempty"`
-	Description string              `yaml:"description,omitempty"`
-	Tags        []string            `yaml:"tags,omitempty"`
-	Parameters  map[string]*Parameter        `yaml:"parameters,omitempty"`
-	RequestBody *RequestBody        `yaml:"requestBody,omitempty"`
-	Responses   map[string]*Response `yaml:"responses,omitempty"`
+	OperationID string                `yaml:"operationId,omitempty"`
+	Summary     string                `yaml:"summary,omitempty"`
+	Description string                `yaml:"description,omitempty"`
+	Tags        []string              `yaml:"tags,omitempty"`
+	Parameters  map[string]*Parameter `yaml:"parameters,omitempty"`
+	RequestBody *RequestBody          `yaml:"requestBody,omitempty"`
+	Responses   map[string]*Response  `yaml:"responses,omitempty"`
 }
 
 func NewAPI() *API {
@@ -127,7 +127,7 @@ func (a *API) ReadRequestBody() error {
 			break
 		}
 	}
-	
+
 	a.RequestBody = reqBody
 	return nil
 }
@@ -187,9 +187,9 @@ func (a *API) GenerateFile(fileName, method, path string) error {
 }
 
 type Parameter struct {
-	Input  utils.IInputMethods `yaml:"-"`
+	Input utils.IInputMethods `yaml:"-"`
 
-	In string `yaml:"in,omitempty"`
+	In     string       `yaml:"in,omitempty"`
 	Schema *ParamSchema `yaml:"schema,omitempty"`
 }
 
@@ -210,14 +210,14 @@ func (p *Parameter) ReadIn() error {
 }
 
 type ParamSchema struct {
-	Input  utils.IInputMethods `yaml:"-"`
+	Input utils.IInputMethods `yaml:"-"`
 
-	Type   string `yaml:"type,omitempty"`
-	Format string `yaml:"format,omitempty"`
+	Type    string `yaml:"type,omitempty"`
+	Format  string `yaml:"format,omitempty"`
 	Example string `yaml:"example,omitempty"`
-	Max    int64  `yaml:"max,omitempty"`
-	Min    int64  `yaml:"min,omitempty"`
-	Ref    string `yaml:"$ref,omitempty"`
+	Max     int64  `yaml:"max,omitempty"`
+	Min     int64  `yaml:"min,omitempty"`
+	Ref     string `yaml:"$ref,omitempty"`
 }
 
 func newParamSchema(input utils.IInputMethods) *ParamSchema {
@@ -338,10 +338,10 @@ func (ps *ParamSchema) ReadAll() error {
 }
 
 type RequestBody struct {
-	Input 	 utils.IInputMethods `yaml:"-"`
+	Input utils.IInputMethods `yaml:"-"`
 
-	Description string `yaml:"description,omitempty"`
-	Required    bool   `yaml:"required,omitempty"`
+	Description string                `yaml:"description,omitempty"`
+	Required    bool                  `yaml:"required,omitempty"`
 	Content     map[string]*MediaType `yaml:"content,omitempty"`
 }
 
@@ -378,9 +378,9 @@ func (mt *MediaType) ReadAll() error {
 type MediaTypeSchema struct {
 	Input utils.IInputMethods `yaml:"-"`
 
-	Type string `yaml:"type,omitempty"`
+	Type   string `yaml:"type,omitempty"`
 	Format string `yaml:"format,omitempty"`
-	Ref string `yaml:"$ref,omitempty"`
+	Ref    string `yaml:"$ref,omitempty"`
 }
 
 func newMediaTypeSchema(input utils.IInputMethods) *MediaTypeSchema {
@@ -447,15 +447,15 @@ func (mts *MediaTypeSchema) ReadAll() error {
 }
 
 type Response struct {
-	Input 	 utils.IInputMethods `yaml:"-"`
+	Input utils.IInputMethods `yaml:"-"`
 
-	Description string `yaml:"description,omitempty"`
+	Description string                `yaml:"description,omitempty"`
 	Content     map[string]*MediaType `yaml:"content,omitempty"`
 }
 
 func NewResponse(input utils.IInputMethods) *Response {
 	return &Response{
-		Input:  input,
+		Input:   input,
 		Content: make(map[string]*MediaType),
 	}
 }

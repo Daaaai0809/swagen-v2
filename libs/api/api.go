@@ -44,7 +44,7 @@ func (ah *APIHandler) HandleGenerateAPICommand() error {
 	}
 
 	api := NewAPI()
-	
+
 	if err := api.ReadOperationID(); err != nil {
 		return err
 	}
@@ -73,7 +73,7 @@ func (ah *APIHandler) HandleGenerateAPICommand() error {
 			return err
 		}
 	}
-	
+
 	isReadTags := false
 	if err := ah.Input.BooleanInput(&isReadTags, "Do you want to add tags?"); err != nil {
 		return err

@@ -1,11 +1,11 @@
 package constants
 
 const (
-	PARAM_IN_PATH = "path"
-	PARAM_IN_QUERY = "query"
+	PARAM_IN_PATH   = "path"
+	PARAM_IN_QUERY  = "query"
 	PARAM_IN_HEADER = "header"
 	PARAM_IN_COOKIE = "cookie"
-	PARAM_IN_BODY = "body"
+	PARAM_IN_BODY   = "body"
 )
 
 var ReflableParamIn = []string{
