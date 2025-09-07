@@ -45,6 +45,8 @@ func (sh *SchemaHandler) HandleGenerateSchemaCommand() error {
 
 	schema := NewSchema(sh.Input)
 
+	schema.Type = "object"
+
 	var schemaName SchemaName
 	if err := schema.InputSchemaName(&schemaName); err != nil {
 		return err
