@@ -18,6 +18,24 @@ var FieldTypeList = []string{
 	OBJECT_TYPE,
 }
 
+func IsFormatableType(fieldType string) bool {
+	switch fieldType {
+	case STRING_TYPE, NUMBER_TYPE, INTEGER_TYPE:
+		return true
+	default:
+		return false
+	}
+}
+
+func IsMaxMinApplicableType(fieldType string) bool {
+	switch fieldType {
+	case NUMBER_TYPE, INTEGER_TYPE:
+		return true
+	default:
+		return false
+	}
+}
+
 func IsExamplableType(fieldType string) bool {
 	switch fieldType {
 	case STRING_TYPE, NUMBER_TYPE, INTEGER_TYPE, BOOLEAN_TYPE:
