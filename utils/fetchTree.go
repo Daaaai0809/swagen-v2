@@ -289,7 +289,7 @@ func selectFieldFromSchemaFile(input IInputMethods, file string) (string, error)
 	}
 
 	// If object, dive into properties; otherwise allow use directly
-	if prop.Type != constants.OBJECT_TYPE && prop.Type != constants.ARRAY_TYPE {
+	if prop.Type == constants.OBJECT_TYPE || prop.Type == constants.ARRAY_TYPE {
 		// allow using the root as-is
 		var use string
 		if err := input.SelectInput(&use, "[INFO] Use the root schema as reference?", []string{"Use this", "Select field"}); err != nil {
