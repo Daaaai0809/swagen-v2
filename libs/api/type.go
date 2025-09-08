@@ -409,6 +409,7 @@ type MediaTypeSchema struct {
 	Type   string `yaml:"type,omitempty"`
 	Format string `yaml:"format,omitempty"`
 	Ref    string `yaml:"$ref,omitempty"`
+	Properties map[string]*MediaTypeSchema `yaml:"properties,omitempty"`
 }
 
 func newMediaTypeSchema(input utils.IInputMethods) *MediaTypeSchema {
@@ -461,13 +462,43 @@ func (mts *MediaTypeSchema) ReadAll() error {
 		return err
 	}
 
-	isReadFormat := false
-	if err := mts.Input.BooleanInput(&isReadFormat, "Do you want to set a format for the schema?"); err != nil {
-		return err
-	}
-	if isReadFormat && constants.IsFormatableType(mts.Type) {
-		if err := mts.ReadFormat(); err != nil {
+	if constants.IsFormatableType(mts.Type) {
+		isReadFormat := false
+		if err := mts.Input.BooleanInput(&isReadFormat, "Do you want to set a format for the schema?"); err != nil {
 			return err
+		}
+		if isReadFormat && constants.IsFormatableType(mts.Type) {
+			if err := mts.ReadFormat(); err != nil {
+				return err
+			}
+		}
+	}
+
+	if mts.Type == constants.OBJECT_TYPE {
+		mts.Properties = make(map[string]*MediaTypeSchema)
+		for {
+			var propName string
+			if err := mts.Input.StringInput(&propName, "Enter the property name (or leave empty to finish)", nil); err != nil {
+				return err
+			}
+			if propName == "" {
+				break
+			}
+
+			propSchema := newMediaTypeSchema(mts.Input)
+			if err := propSchema.ReadAll(); err != nil {
+				return err
+			}
+
+			mts.Properties[propName] = propSchema
+
+			var addMore bool
+			if err := mts.Input.BooleanInput(&addMore, "Do you want to add another property?"); err != nil {
+				return err
+			}
+			if !addMore {
+				break
+			}
 		}
 	}
 
