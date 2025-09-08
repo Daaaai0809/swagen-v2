@@ -1,6 +1,8 @@
 package api
 
 import (
+	"errors"
+
 	"github.com/Daaaai0809/swagen-v2/constants"
 	"github.com/Daaaai0809/swagen-v2/utils"
 	"gopkg.in/yaml.v2"
@@ -71,6 +73,10 @@ func (a *API) ReadParameter() error {
 	param := NewParameter(a.Input)
 
 	if err := param.ReadIn(); err != nil {
+		return err
+	}
+
+	if err := param.ReadName(); err != nil {
 		return err
 	}
 
@@ -189,6 +195,7 @@ type Parameter struct {
 	Input utils.IInputMethods `yaml:"-"`
 
 	In     string       `yaml:"in,omitempty"`
+	Name   string       `yaml:"name,omitempty"`
 	Schema *ParamSchema `yaml:"schema,omitempty"`
 }
 
@@ -202,6 +209,21 @@ func NewParameter(input utils.IInputMethods) *Parameter {
 func (p *Parameter) ReadIn() error {
 	err := p.Input.SelectInput(&p.In, "Select Parameter Location", constants.ReflableParamIn)
 	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *Parameter) ReadName() error {
+	var validate utils.ValidationFunc = func(input string) error {
+		if input == "" {
+			return errors.New("parameter name is required")
+		}
+		return nil
+	}
+
+	if err := p.Input.StringInput(&p.Name, "Enter the parameter name", &validate); err != nil {
 		return err
 	}
 
@@ -288,6 +310,7 @@ func (ps *ParamSchema) ReadAll() error {
 	if err := ps.Input.BooleanInput(&isReadRef, "Do you want to set a $ref for the parameter?"); err != nil {
 		return err
 	}
+
 	if isReadRef {
 		if err := ps.ReadRef(); err != nil {
 			return err
