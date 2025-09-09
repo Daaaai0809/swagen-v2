@@ -1,4 +1,4 @@
-package libs
+package handler
 
 import (
 	"errors"
@@ -39,7 +39,7 @@ func NewProperty(input utils.IInputMethods, propertyName string, parentProperty 
 	}
 }
 
-func (s *Property) ReadType() error {
+func (s *Property) readType() error {
 	err := s.Input.SelectInput(&s.Type, "Select Property Type", constants.FieldTypeList)
 	if err != nil {
 		return err
@@ -48,7 +48,7 @@ func (s *Property) ReadType() error {
 	return nil
 }
 
-func (s *Property) ReadFormat() error {
+func (s *Property) readFormat() error {
 	err := s.Input.SelectInput(&s.Format, "Select Property Format", constants.FormatList[s.Type])
 	if err != nil {
 		return err
@@ -57,7 +57,7 @@ func (s *Property) ReadFormat() error {
 	return nil
 }
 
-func (s *Property) ReadRequired() error {
+func (s *Property) readRequired() error {
 	isRequired := false
 	err := s.Input.BooleanInput(&isRequired, "Is this property required?")
 	if err != nil {
@@ -71,7 +71,7 @@ func (s *Property) ReadRequired() error {
 	return nil
 }
 
-func (s *Property) ReadNullable() error {
+func (s *Property) readNullable() error {
 	err := s.Input.BooleanInput(&s.Nullable, "Is this property nullable?")
 	if err != nil {
 		return err
@@ -80,7 +80,7 @@ func (s *Property) ReadNullable() error {
 	return nil
 }
 
-func (s *Property) InputRef() error {
+func (s *Property) readRef() error {
 	ref, err := utils.InteractiveResolveRef(s.Input, s.Mode)
 	if err != nil {
 		return err
@@ -99,6 +99,7 @@ func (s *Property) InputRef() error {
 	return nil
 }
 
+// ReadProperty() is public method because this is used in schema handler
 func (s *Property) ReadProperty() error {
 	var propertyName string
 
@@ -120,25 +121,6 @@ func (s *Property) ReadProperty() error {
 	}
 
 	property := NewProperty(s.Input, propertyName, s, s.Mode)
-	if s.Mode != constants.MODE_MODEL {
-		var useRef bool
-		if err := s.Input.BooleanInput(&useRef, "Do you want to reference another schema?"); err != nil {
-			return err
-		}
-
-		if useRef {
-			if err := property.InputRef(); err != nil {
-				return err
-			}
-			// ask required for referenced property
-			if err := property.ReadRequired(); err != nil {
-				return err
-			}
-			// attach the referenced property to parent
-			s.Properties[propertyName] = property
-			return nil
-		}
-	}
 
 	if err := property.ReadAll(); err != nil {
 		return err
@@ -185,7 +167,7 @@ func (s *Property) ReadItem() error {
 	return nil
 }
 
-func (s *Property) ReadExample() error {
+func (s *Property) readExample() error {
 	var example string
 	err := s.Input.StringInput(&example, "Example Value", nil)
 	if err != nil {
@@ -196,7 +178,21 @@ func (s *Property) ReadExample() error {
 }
 
 func (s *Property) ReadAll() error {
-	if err := s.ReadType(); err != nil {
+	if s.isReadRef() {
+		var useRef bool
+		if err := s.Input.BooleanInput(&useRef, "Do you want to reference another schema?"); err != nil {
+			return err
+		}
+
+		if useRef {
+			if err := s.readRef(); err != nil {
+				return err
+			}
+			return nil
+		}
+	}
+
+	if err := s.readType(); err != nil {
 		return err
 	}
 
@@ -207,21 +203,22 @@ func (s *Property) ReadAll() error {
 			return err
 		}
 	}
-
 	if isUseFormat {
-		if err := s.ReadFormat(); err != nil {
+		if err := s.readFormat(); err != nil {
 			return err
 		}
 	}
 
-	if s.Mode != constants.MODE_MODEL {
-		if err := s.ReadRequired(); err != nil {
+	if s.isReadRequired() {
+		if err := s.readRequired(); err != nil {
 			return err
 		}
 	}
 
-	if err := s.ReadNullable(); err != nil {
-		return err
+	if s.isReadNullable() {
+		if err := s.readNullable(); err != nil {
+			return err
+		}
 	}
 
 	if s.Type == constants.OBJECT_TYPE {
@@ -256,11 +253,35 @@ func (s *Property) ReadAll() error {
 		}
 
 		if isAddExample {
-			if err := s.ReadExample(); err != nil {
+			if err := s.readExample(); err != nil {
 				return err
 			}
 		}
 	}
 
 	return nil
+}
+
+func (p *Property) isReadRequired() bool {
+	if p.ParentProperty == nil {
+		return false
+	}
+
+	if p.Mode == constants.MODE_MODEL {
+		return false
+	}
+
+	return true
+}
+
+func (p *Property) isReadNullable() bool {
+	return p.Mode != constants.MODE_API
+}
+
+func (p *Property) isReadRef() bool {
+	if p.ParentProperty == nil {
+		return true
+	}
+
+	return p.Mode != constants.MODE_MODEL
 }
