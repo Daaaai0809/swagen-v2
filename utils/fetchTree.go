@@ -181,7 +181,7 @@ func selectYamlFileInteractive(input IInputMethods, start string) (string, error
 
 // selectFieldFromModelFile parses a model file and guides the user to select a field.
 // Returns a JSON Pointer like "/properties/foo/items/properties/bar" (without leading '#').
-// local lite types to avoid importing libs and causing cycles
+// local lite types to avoid importing handler and causing cycles
 type propertyLite struct {
 	Type       string                   `yaml:"type,omitempty"`
 	Properties map[string]*propertyLite `yaml:"properties,omitempty"`
