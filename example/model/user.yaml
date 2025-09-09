@@ -1,0 +1,16 @@
+title: User
+type: object
+properties:
+  email:
+    type: string
+    format: email
+  firstName:
+    type: string
+  id:
+    type: string
+    format: uuid
+  lastName:
+    type: string
+  password:
+    type: string
+    format: password

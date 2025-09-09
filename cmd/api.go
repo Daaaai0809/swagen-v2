@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/Daaaai0809/swagen-v2/libs/api"
+	"github.com/Daaaai0809/swagen-v2/handler/api"
 	"github.com/Daaaai0809/swagen-v2/utils"
 	"github.com/spf13/cobra"
 )

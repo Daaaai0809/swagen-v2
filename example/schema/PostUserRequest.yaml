@@ -1,0 +1,16 @@
+PostUserRequest:
+  type: object
+  properties:
+    email:
+      $ref: ../model/user.yaml#/properties/email
+    firstName:
+      $ref: ../model/user.yaml#/properties/firstName
+    lastName:
+      $ref: ../model/user.yaml#/properties/lastName
+    password:
+      $ref: ../model/user.yaml#/properties/password
+  required:
+  - firstName
+  - lastName
+  - email
+  - password

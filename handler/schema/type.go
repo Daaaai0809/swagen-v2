@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/Daaaai0809/swagen-v2/constants"
-	"github.com/Daaaai0809/swagen-v2/libs"
+	"github.com/Daaaai0809/swagen-v2/handler"
 	"github.com/Daaaai0809/swagen-v2/utils"
 	"gopkg.in/yaml.v2"
 )
@@ -12,14 +12,14 @@ import (
 type SchemaName string
 
 type Schema struct {
-	*libs.Property
+	*handler.Property
 	Input utils.IInputMethods
 }
 
 func NewSchema(input utils.IInputMethods) Schema {
 	return Schema{
 		Input:    input,
-		Property: libs.NewProperty(input, "", nil, constants.MODE_SCHEMA),
+		Property: handler.NewProperty(input, "", nil, constants.MODE_SCHEMA),
 	}
 }
 
@@ -44,7 +44,7 @@ func (s Schema) InputSchemaName(name *SchemaName) error {
 }
 
 func (s *Schema) GenerateSchema(fileName string, schemaName SchemaName, path string) error {
-	data, err := yaml.Marshal(map[SchemaName]*libs.Property{
+	data, err := yaml.Marshal(map[SchemaName]*handler.Property{
 		schemaName: s.Property,
 	})
 	if err != nil {

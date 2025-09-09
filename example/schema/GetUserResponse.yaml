@@ -1,0 +1,28 @@
+GetUserResponse:
+  type: object
+  properties:
+    createdAt:
+      type: string
+      format: date-time
+      nullable: true
+      example: "2025-01-01 00:00:00"
+    email:
+      $ref: ../model/user.yaml#/properties/email
+    firstName:
+      $ref: ../model/user.yaml#/properties/firstName
+    id:
+      $ref: ../model/user.yaml#/properties/id
+    lastName:
+      $ref: ../model/user.yaml#/properties/lastName
+    updatedAt:
+      type: string
+      format: date-time
+      nullable: true
+      example: "2025-01-01 00:00:00"
+  required:
+  - id
+  - firstName
+  - lastName
+  - email
+  - createdAt
+  - updatedAt
