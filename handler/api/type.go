@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/Daaaai0809/swagen-v2/constants"
+	"github.com/Daaaai0809/swagen-v2/handler"
 	"github.com/Daaaai0809/swagen-v2/utils"
 	"gopkg.in/yaml.v2"
 )
@@ -202,7 +203,7 @@ type Parameter struct {
 func NewParameter(input utils.IInputMethods) *Parameter {
 	return &Parameter{
 		Input:  input,
-		Schema: newParamSchema(input),
+		Schema: NewParamSchema(input),
 	}
 }
 
@@ -241,7 +242,7 @@ type ParamSchema struct {
 	Ref     string `yaml:"$ref,omitempty"`
 }
 
-func newParamSchema(input utils.IInputMethods) *ParamSchema {
+func NewParamSchema(input utils.IInputMethods) *ParamSchema {
 	return &ParamSchema{
 		Input: input,
 	}
@@ -383,7 +384,7 @@ func NewRequestBody(input utils.IInputMethods) *RequestBody {
 type MediaType struct {
 	Input utils.IInputMethods `yaml:"-"`
 
-	Schema *MediaTypeSchema `yaml:"schema,omitempty"`
+	Schema *handler.Property `yaml:"schema,omitempty"`
 	// TODO: Implement examples
 	// Example string `yaml:"example,omitempty"`
 }
@@ -391,115 +392,13 @@ type MediaType struct {
 func NewMediaType(input utils.IInputMethods) *MediaType {
 	return &MediaType{
 		Input:  input,
-		Schema: newMediaTypeSchema(input),
+		Schema: handler.NewProperty(input, "schema", nil, constants.MODE_API),
 	}
 }
 
 func (mt *MediaType) ReadAll() error {
 	if err := mt.Schema.ReadAll(); err != nil {
 		return err
-	}
-
-	return nil
-}
-
-type MediaTypeSchema struct {
-	Input utils.IInputMethods `yaml:"-"`
-
-	Type   string `yaml:"type,omitempty"`
-	Format string `yaml:"format,omitempty"`
-	Ref    string `yaml:"$ref,omitempty"`
-	Properties map[string]*MediaTypeSchema `yaml:"properties,omitempty"`
-}
-
-func newMediaTypeSchema(input utils.IInputMethods) *MediaTypeSchema {
-	return &MediaTypeSchema{
-		Input: input,
-	}
-}
-
-func (mts *MediaTypeSchema) ReadType() error {
-	err := mts.Input.SelectInput(&mts.Type, "Select Schema Type", constants.FieldTypeList)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (mts *MediaTypeSchema) ReadFormat() error {
-	err := mts.Input.SelectInput(&mts.Format, "Select Schema Format", constants.FormatList[mts.Type])
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (mts *MediaTypeSchema) ReadRef() error {
-	ref, err := utils.InteractiveResolveRef(mts.Input, constants.MODE_API)
-	if err != nil {
-		return err
-	}
-
-	mts.Ref = ref
-	return nil
-}
-
-func (mts *MediaTypeSchema) ReadAll() error {
-	isReadRef := false
-	if err := mts.Input.BooleanInput(&isReadRef, "Do you want to set a $ref for the schema?"); err != nil {
-		return err
-	}
-	if isReadRef {
-		if err := mts.ReadRef(); err != nil {
-			return err
-		}
-		return nil
-	}
-
-	if err := mts.ReadType(); err != nil {
-		return err
-	}
-
-	if constants.IsFormatableType(mts.Type) {
-		isReadFormat := false
-		if err := mts.Input.BooleanInput(&isReadFormat, "Do you want to set a format for the schema?"); err != nil {
-			return err
-		}
-		if isReadFormat && constants.IsFormatableType(mts.Type) {
-			if err := mts.ReadFormat(); err != nil {
-				return err
-			}
-		}
-	}
-
-	if mts.Type == constants.OBJECT_TYPE {
-		mts.Properties = make(map[string]*MediaTypeSchema)
-		for {
-			var propName string
-			if err := mts.Input.StringInput(&propName, "Enter the property name (or leave empty to finish)", nil); err != nil {
-				return err
-			}
-			if propName == "" {
-				break
-			}
-
-			propSchema := newMediaTypeSchema(mts.Input)
-			if err := propSchema.ReadAll(); err != nil {
-				return err
-			}
-
-			mts.Properties[propName] = propSchema
-
-			var addMore bool
-			if err := mts.Input.BooleanInput(&addMore, "Do you want to add another property?"); err != nil {
-				return err
-			}
-			if !addMore {
-				break
-			}
-		}
 	}
 
 	return nil

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/Daaaai0809/swagen-v2/constants"
-	"github.com/Daaaai0809/swagen-v2/libs"
+	"github.com/Daaaai0809/swagen-v2/handler"
 	"github.com/Daaaai0809/swagen-v2/utils"
 )
 
@@ -57,7 +57,7 @@ func (mh *ModelHandler) HandleGenerateModelCommand() error {
 			return err
 		}
 
-		property := libs.NewProperty(mh.Input, propertyName, nil, constants.MODE_MODEL)
+		property := handler.NewProperty(mh.Input, propertyName, nil, constants.MODE_MODEL)
 		if err := property.ReadAll(); err != nil {
 			return err
 		}
