@@ -4,7 +4,7 @@ Copyright © 2025 NAME HERE dai.tsuruga0809@gmail.com
 package cmd
 
 import (
-	"github.com/Daaaai0809/swagen-v2/libs/model"
+	"github.com/Daaaai0809/swagen-v2/handler/model"
 	"github.com/Daaaai0809/swagen-v2/utils"
 	"github.com/spf13/cobra"
 )
