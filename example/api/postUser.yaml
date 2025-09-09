@@ -1,0 +1,42 @@
+post:
+  operationId: postUser
+  summary: post user
+  description: post user info
+  tags:
+  - Users
+  requestBody:
+    description: request body
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../schema/PostUserRequest.yaml#/PostUserRequest
+  responses:
+    "200":
+      description: sucess response
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: number
+              message:
+                type: string
+            required:
+            - message
+            - code
+    default:
+      description: error response
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: number
+              message:
+                type: string
+            required:
+            - message
+            - code
