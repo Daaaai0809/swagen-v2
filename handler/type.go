@@ -121,25 +121,6 @@ func (s *Property) ReadProperty() error {
 	}
 
 	property := NewProperty(s.Input, propertyName, s, s.Mode)
-	if s.Mode != constants.MODE_MODEL {
-		var useRef bool
-		if err := s.Input.BooleanInput(&useRef, "Do you want to reference another schema?"); err != nil {
-			return err
-		}
-
-		if useRef {
-			if err := property.readRef(); err != nil {
-				return err
-			}
-			// ask required for referenced property
-			if err := property.readRequired(); err != nil {
-				return err
-			}
-			// attach the referenced property to parent
-			s.Properties[propertyName] = property
-			return nil
-		}
-	}
 
 	if err := property.ReadAll(); err != nil {
 		return err
@@ -197,6 +178,20 @@ func (s *Property) readExample() error {
 }
 
 func (s *Property) ReadAll() error {
+	if s.isReadRef() {
+		var useRef bool
+		if err := s.Input.BooleanInput(&useRef, "Do you want to reference another schema?"); err != nil {
+			return err
+		}
+
+		if useRef {
+			if err := s.readRef(); err != nil {
+				return err
+			}
+			return nil
+		}
+	}
+
 	if err := s.readType(); err != nil {
 		return err
 	}
@@ -280,9 +275,13 @@ func (p *Property) isReadRequired() bool {
 }
 
 func (p *Property) isReadNullable() bool {
-	if p.Mode == constants.MODE_API {
-		return false
+	return p.Mode != constants.MODE_API
+}
+
+func (p *Property) isReadRef() bool {
+	if p.ParentProperty == nil {
+		return true
 	}
 
-	return true
+	return p.Mode != constants.MODE_MODEL
 }
