@@ -5,12 +5,13 @@ import (
 
 	"github.com/Daaaai0809/swagen-v2/constants"
 	"github.com/Daaaai0809/swagen-v2/handler"
+	"github.com/Daaaai0809/swagen-v2/input"
 	"github.com/Daaaai0809/swagen-v2/utils"
 	"gopkg.in/yaml.v2"
 )
 
 type API struct {
-	Input utils.IInputMethods `yaml:"-"`
+	Input input.IInputMethods `yaml:"-"`
 
 	OperationID string               `yaml:"operationId,omitempty"`
 	Summary     string               `yaml:"summary,omitempty"`
@@ -193,14 +194,14 @@ func (a *API) GenerateFile(fileName, method, path string) error {
 }
 
 type Parameter struct {
-	Input utils.IInputMethods `yaml:"-"`
+	Input input.IInputMethods `yaml:"-"`
 
 	In     string       `yaml:"in,omitempty"`
 	Name   string       `yaml:"name,omitempty"`
 	Schema *ParamSchema `yaml:"schema,omitempty"`
 }
 
-func NewParameter(input utils.IInputMethods) *Parameter {
+func NewParameter(input input.IInputMethods) *Parameter {
 	return &Parameter{
 		Input:  input,
 		Schema: NewParamSchema(input),
@@ -217,7 +218,7 @@ func (p *Parameter) ReadIn() error {
 }
 
 func (p *Parameter) ReadName() error {
-	var validate utils.ValidationFunc = func(input string) error {
+	var validate input.ValidationFunc = func(input string) error {
 		if input == "" {
 			return errors.New("parameter name is required")
 		}
@@ -232,7 +233,7 @@ func (p *Parameter) ReadName() error {
 }
 
 type ParamSchema struct {
-	Input utils.IInputMethods `yaml:"-"`
+	Input input.IInputMethods `yaml:"-"`
 
 	Type    string `yaml:"type,omitempty"`
 	Format  string `yaml:"format,omitempty"`
@@ -242,7 +243,7 @@ type ParamSchema struct {
 	Ref     string `yaml:"$ref,omitempty"`
 }
 
-func NewParamSchema(input utils.IInputMethods) *ParamSchema {
+func NewParamSchema(input input.IInputMethods) *ParamSchema {
 	return &ParamSchema{
 		Input: input,
 	}
@@ -367,14 +368,14 @@ func (ps *ParamSchema) ReadAll() error {
 }
 
 type RequestBody struct {
-	Input utils.IInputMethods `yaml:"-"`
+	Input input.IInputMethods `yaml:"-"`
 
 	Description string                `yaml:"description,omitempty"`
 	Required    bool                  `yaml:"required,omitempty"`
 	Content     map[string]*MediaType `yaml:"content,omitempty"`
 }
 
-func NewRequestBody(input utils.IInputMethods) *RequestBody {
+func NewRequestBody(input input.IInputMethods) *RequestBody {
 	return &RequestBody{
 		Input:   input,
 		Content: make(map[string]*MediaType),
@@ -382,14 +383,14 @@ func NewRequestBody(input utils.IInputMethods) *RequestBody {
 }
 
 type MediaType struct {
-	Input utils.IInputMethods `yaml:"-"`
+	Input input.IInputMethods `yaml:"-"`
 
 	Schema *handler.Property `yaml:"schema,omitempty"`
 	// TODO: Implement examples
 	// Example string `yaml:"example,omitempty"`
 }
 
-func NewMediaType(input utils.IInputMethods) *MediaType {
+func NewMediaType(input input.IInputMethods) *MediaType {
 	return &MediaType{
 		Input:  input,
 		Schema: handler.NewProperty(input, "schema", nil, constants.MODE_API),
@@ -405,13 +406,13 @@ func (mt *MediaType) ReadAll() error {
 }
 
 type Response struct {
-	Input utils.IInputMethods `yaml:"-"`
+	Input input.IInputMethods `yaml:"-"`
 
 	Description string                `yaml:"description,omitempty"`
 	Content     map[string]*MediaType `yaml:"content,omitempty"`
 }
 
-func NewResponse(input utils.IInputMethods) *Response {
+func NewResponse(input input.IInputMethods) *Response {
 	return &Response{
 		Input:   input,
 		Content: make(map[string]*MediaType),

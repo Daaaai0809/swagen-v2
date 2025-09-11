@@ -5,11 +5,12 @@ import (
 	"fmt"
 
 	"github.com/Daaaai0809/swagen-v2/constants"
+	"github.com/Daaaai0809/swagen-v2/input"
 	"github.com/Daaaai0809/swagen-v2/utils"
 )
 
 type Property struct {
-	Input          utils.IInputMethods  `yaml:"-"`
+	Input          input.IInputMethods  `yaml:"-"`
 	PropertyName   string               `yaml:"-"`
 	ParentProperty *Property            `yaml:"-"` // Optional parent schema for nested properties
 	Mode           constants.InputMode  `yaml:"-"` // Mode of the schema (MODEL, SCHEMA, API)
@@ -23,7 +24,7 @@ type Property struct {
 	Ref            string               `yaml:"$ref,omitempty"` // Reference to another schema
 }
 
-func NewProperty(input utils.IInputMethods, propertyName string, parentProperty *Property, mode constants.InputMode) *Property {
+func NewProperty(input input.IInputMethods, propertyName string, parentProperty *Property, mode constants.InputMode) *Property {
 	return &Property{
 		Input:          input,
 		PropertyName:   propertyName,
@@ -103,7 +104,7 @@ func (s *Property) readRef() error {
 func (s *Property) ReadProperty() error {
 	var propertyName string
 
-	var validate utils.ValidationFunc = func(input string) error {
+	var validate input.ValidationFunc = func(input string) error {
 		if input == "" {
 			return errors.New("[ERROR] property name cannot be empty")
 		}

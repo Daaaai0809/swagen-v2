@@ -4,21 +4,22 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/Daaaai0809/swagen-v2/input"
 	"github.com/Daaaai0809/swagen-v2/utils"
 )
 
 type SchemaHandler struct {
-	Input utils.IInputMethods
+	Input input.IInputMethods
 }
 
-func NewSchemaHandler(input utils.IInputMethods) *SchemaHandler {
+func NewSchemaHandler(input input.IInputMethods) *SchemaHandler {
 	return &SchemaHandler{
 		Input: input,
 	}
 }
 
 func (sh *SchemaHandler) HandleGenerateSchemaCommand() error {
-	var validate utils.ValidationFunc = func(input string) error {
+	var validate input.ValidationFunc = func(input string) error {
 		if input == "" {
 			return errors.New("file name is required")
 		}

@@ -9,19 +9,20 @@ import (
 	"strings"
 
 	"github.com/Daaaai0809/swagen-v2/constants"
+	"github.com/Daaaai0809/swagen-v2/input"
 	"gopkg.in/yaml.v2"
 )
 
 // InteractiveResolveRef
 // Contract:
-// - Inputs: IInputMethods, mode (SCHEMA or API)
+// - Inputs: input.IInputMethods, mode (SCHEMA or API)
 // - Outcome: returns a $ref string built from a user-selected YAML file and field
 // - Behavior:
 //   - SCHEMA mode: traverse from MODEL_PATH
 //   - API mode: ask user to choose start path (MODEL_PATH or SCHEMA_PATH)
 //   - After selecting a file, parse YAML into Model or Schema(map) and select a field
 //   - Build JSON Pointer and relative file path (relative to SCHEMA_PATH or API_PATH)
-func InteractiveResolveRef(input IInputMethods, mode constants.InputMode) (string, error) {
+func InteractiveResolveRef(input input.IInputMethods, mode constants.InputMode) (string, error) {
 	// Decide start path and destination base to compute relative path
 	startPath, fileKind, err := decideStartPath(input, mode)
 	if err != nil {
@@ -89,7 +90,7 @@ func InteractiveResolveRef(input IInputMethods, mode constants.InputMode) (strin
 
 // decideStartPath asks for start directory based on mode and returns also the fileKind hint
 // fileKind: "model", "schema", or "auto"
-func decideStartPath(input IInputMethods, mode constants.InputMode) (string, string, error) {
+func decideStartPath(input input.IInputMethods, mode constants.InputMode) (string, string, error) {
 	switch mode {
 	case constants.MODE_SCHEMA:
 		p := GetEnv(MODEL_PATH, "")
@@ -124,7 +125,7 @@ func decideStartPath(input IInputMethods, mode constants.InputMode) (string, str
 }
 
 // selectYamlFileInteractive lets the user navigate directories and select a YAML file.
-func selectYamlFileInteractive(input IInputMethods, start string) (string, error) {
+func selectYamlFileInteractive(input input.IInputMethods, start string) (string, error) {
 	cwd := filepath.Clean(start)
 	for {
 		entries, err := os.ReadDir(cwd)
@@ -192,7 +193,7 @@ type modelLite struct {
 	Properties map[string]*propertyLite `yaml:"properties,omitempty"`
 }
 
-func selectFieldFromModelFile(input IInputMethods, file string) (string, error) {
+func selectFieldFromModelFile(input input.IInputMethods, file string) (string, error) {
 	b, err := os.ReadFile(file)
 	if err != nil {
 		return "", err
@@ -261,7 +262,7 @@ func selectFieldFromModelFile(input IInputMethods, file string) (string, error) 
 
 // selectFieldFromSchemaFile parses a schema file (map root) and guides the user to select a field.
 // Returns a JSON Pointer like "/<SchemaName>/properties/foo" (without leading '#').
-func selectFieldFromSchemaFile(input IInputMethods, file string) (string, error) {
+func selectFieldFromSchemaFile(input input.IInputMethods, file string) (string, error) {
 	b, err := os.ReadFile(file)
 	if err != nil {
 		return "", err

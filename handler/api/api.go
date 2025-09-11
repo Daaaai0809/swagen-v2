@@ -5,21 +5,22 @@ import (
 	"strings"
 
 	"github.com/Daaaai0809/swagen-v2/constants"
+	"github.com/Daaaai0809/swagen-v2/input"
 	"github.com/Daaaai0809/swagen-v2/utils"
 )
 
 type APIHandler struct {
-	Input utils.IInputMethods
+	Input input.IInputMethods
 }
 
-func NewAPIHandler(input utils.IInputMethods) *APIHandler {
+func NewAPIHandler(input input.IInputMethods) *APIHandler {
 	return &APIHandler{
 		Input: input,
 	}
 }
 
 func (ah *APIHandler) HandleGenerateAPICommand() error {
-	var validate utils.ValidationFunc = func(input string) error {
+	var validate input.ValidationFunc = func(input string) error {
 		if input == "" {
 			return errors.New("file name is required")
 		}

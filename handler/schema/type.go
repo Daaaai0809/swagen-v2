@@ -5,6 +5,7 @@ import (
 
 	"github.com/Daaaai0809/swagen-v2/constants"
 	"github.com/Daaaai0809/swagen-v2/handler"
+	"github.com/Daaaai0809/swagen-v2/input"
 	"github.com/Daaaai0809/swagen-v2/utils"
 	"gopkg.in/yaml.v2"
 )
@@ -13,10 +14,10 @@ type SchemaName string
 
 type Schema struct {
 	*handler.Property
-	Input utils.IInputMethods
+	Input input.IInputMethods
 }
 
-func NewSchema(input utils.IInputMethods) Schema {
+func NewSchema(input input.IInputMethods) Schema {
 	return Schema{
 		Input:    input,
 		Property: handler.NewProperty(input, "", nil, constants.MODE_SCHEMA),
@@ -24,7 +25,7 @@ func NewSchema(input utils.IInputMethods) Schema {
 }
 
 func (s Schema) InputSchemaName(name *SchemaName) error {
-	var validate utils.ValidationFunc = func(input string) error {
+	var validate input.ValidationFunc = func(input string) error {
 		if input == "" {
 			return errors.New("[ERROR] schema name cannot be empty")
 		}

@@ -5,18 +5,19 @@ import (
 
 	"github.com/Daaaai0809/swagen-v2/constants"
 	"github.com/Daaaai0809/swagen-v2/handler"
+	"github.com/Daaaai0809/swagen-v2/input"
 	"github.com/Daaaai0809/swagen-v2/utils"
 	"gopkg.in/yaml.v2"
 )
 
 type Model struct {
-	Input      utils.IInputMethods          `yaml:"-"`
+	Input      input.IInputMethods          `yaml:"-"`
 	Title      string                       `yaml:"title,omitempty"`
 	Type       string                       `yaml:"type"`
 	Properties map[string]*handler.Property `yaml:"properties,omitempty"`
 }
 
-func NewModel(input utils.IInputMethods) *Model {
+func NewModel(input input.IInputMethods) *Model {
 	return &Model{
 		Input:      input,
 		Title:      "",
@@ -26,7 +27,7 @@ func NewModel(input utils.IInputMethods) *Model {
 }
 
 func (m *Model) ReadTitle() error {
-	var validate utils.ValidationFunc = func(input string) error {
+	var validate input.ValidationFunc = func(input string) error {
 		if input == "" {
 			return errors.New("[ERROR] title cannot be empty")
 		}
@@ -46,7 +47,7 @@ func (m *Model) ReadTitle() error {
 }
 
 func (m *Model) ReadPropertyName(name *string) error {
-	var validate utils.ValidationFunc = func(input string) error {
+	var validate input.ValidationFunc = func(input string) error {
 		if input == "" {
 			return errors.New("[ERROR] property name cannot be empty")
 		}

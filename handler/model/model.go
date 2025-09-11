@@ -6,14 +6,15 @@ import (
 
 	"github.com/Daaaai0809/swagen-v2/constants"
 	"github.com/Daaaai0809/swagen-v2/handler"
+	"github.com/Daaaai0809/swagen-v2/input"
 	"github.com/Daaaai0809/swagen-v2/utils"
 )
 
 type ModelHandler struct {
-	Input utils.IInputMethods
+	Input input.IInputMethods
 }
 
-func NewModelHandler(input utils.IInputMethods) *ModelHandler {
+func NewModelHandler(input input.IInputMethods) *ModelHandler {
 	return &ModelHandler{
 		Input: input,
 	}
@@ -22,7 +23,7 @@ func NewModelHandler(input utils.IInputMethods) *ModelHandler {
 func (mh *ModelHandler) HandleGenerateModelCommand() error {
 	model := NewModel(mh.Input)
 
-	var validate utils.ValidationFunc = func(input string) error {
+	var validate input.ValidationFunc = func(input string) error {
 		if input == "" {
 			return errors.New("file name is required")
 		}

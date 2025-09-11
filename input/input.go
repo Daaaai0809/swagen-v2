@@ -1,13 +1,16 @@
-package utils
+package input
 
 import (
 	"errors"
 	"strconv"
 
 	"github.com/manifoldco/promptui"
+	"github.com/manifoldco/promptui/list"
 )
 
 type ValidationFunc func(input string) error
+
+type SearcherFunc func(input string, index int) bool
 
 type IInputMethods interface {
 	StringInput(result *string, label string, validation *ValidationFunc) error
@@ -19,6 +22,7 @@ type IInputMethods interface {
 	Float64Input(result *float64, label string, validation *ValidationFunc) error
 	BooleanInput(result *bool, label string) error
 	SelectInput(result *string, label string, items []string) error
+	MultipleSelectInput(result *[]string, label string, items []string, searchFunc *SearcherFunc) error
 }
 
 type InputMethods struct{}
@@ -272,5 +276,39 @@ func (im *InputMethods) SelectInput(result *string, label string, items []string
 	}
 
 	*result = items[index]
+	return nil
+}
+
+func (im *InputMethods) MultipleSelectInput(result *[]string, label string, items []string, searchFunc *SearcherFunc) error {
+	prompt := promptui.Select{
+		Label: label,
+		Items: items,
+		Templates: &promptui.SelectTemplates{
+			Label:    "{{ . }}?",
+			Active:   "{{ . | cyan }}",
+			Inactive: "{{ . | faint }}",
+			Selected: "{{ . | green }}",
+		},
+		Searcher: list.Searcher(*searchFunc),
+	}
+
+	var selections []string
+	for {
+		index, selection, err := prompt.Run()
+		if err != nil {
+			if err == promptui.ErrInterrupt || err == promptui.ErrEOF {
+				break
+			}
+			return err
+		}
+
+		if index < 0 || index >= len(items) {
+			return errors.New("invalid selection index")
+		}
+
+		selections = append(selections, selection)
+	}
+
+	*result = selections
 	return nil
 }
