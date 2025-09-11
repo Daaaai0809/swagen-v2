@@ -17,7 +17,7 @@
    ```bash
    cp .env.example .env
    ```
-   必要に応じて `MODEL_PATH`, `SCHEMA_PATH`, `API_PATH` を編集します。
+   必要に応じて `SWAGEN_MODEL_PATH`, `SWAGEN_SCHEMA_PATH`, `SWAGEN_API_PATH` を編集します。
 3. リポジトリのルートディレクトリで以下を実行:
    ```bash
    go build -o ./example/swagen-v2.local

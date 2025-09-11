@@ -17,10 +17,10 @@ import (
 // - Inputs: IInputMethods, mode (SCHEMA or API)
 // - Outcome: returns a $ref string built from a user-selected YAML file and field
 // - Behavior:
-//   - SCHEMA mode: traverse from MODEL_PATH
-//   - API mode: ask user to choose start path (MODEL_PATH or SCHEMA_PATH)
+//   - SCHEMA mode: traverse from SWAGEN_MODEL_PATH
+//   - API mode: ask user to choose start path (SWAGEN_MODEL_PATH or SWAGEN_SCHEMA_PATH)
 //   - After selecting a file, parse YAML into Model or Schema(map) and select a field
-//   - Build JSON Pointer and relative file path (relative to SCHEMA_PATH or API_PATH)
+//   - Build JSON Pointer and relative file path (relative to SWAGEN_SCHEMA_PATH or SWAGEN_API_PATH)
 func InteractiveResolveRef(input IInputMethods, mode constants.InputMode) (string, error) {
 	// Decide start path and destination base to compute relative path
 	startPath, fileKind, err := decideStartPath(input, mode)
@@ -28,9 +28,9 @@ func InteractiveResolveRef(input IInputMethods, mode constants.InputMode) (strin
 		return "", err
 	}
 
-	destBase := GetEnv(SCHEMA_PATH, "")
+	destBase := GetEnv(SWAGEN_SCHEMA_PATH, "")
 	if mode == constants.MODE_API {
-		destBase = GetEnv(API_PATH, "")
+		destBase = GetEnv(SWAGEN_API_PATH, "")
 	}
 	if destBase == "" {
 		destBase = "."
@@ -42,10 +42,10 @@ func InteractiveResolveRef(input IInputMethods, mode constants.InputMode) (strin
 		return "", err
 	}
 
-	// If startPath came from SCHEMA_PATH, treat file as schema-kind even in API mode
+	// If startPath came from SWAGEN_SCHEMA_PATH, treat file as schema-kind even in API mode
 	if fileKind == "auto" {
 		// infer by extension only (already .yaml) and location
-		if strings.HasPrefix(filepath.Clean(selectedFile), filepath.Clean(GetEnv(SCHEMA_PATH, ""))) {
+		if strings.HasPrefix(filepath.Clean(selectedFile), filepath.Clean(GetEnv(SWAGEN_SCHEMA_PATH, ""))) {
 			fileKind = "schema"
 		} else {
 			fileKind = "model"
@@ -92,27 +92,27 @@ func InteractiveResolveRef(input IInputMethods, mode constants.InputMode) (strin
 func decideStartPath(input IInputMethods, mode constants.InputMode) (string, string, error) {
 	switch mode {
 	case constants.MODE_SCHEMA:
-		p := GetEnv(MODEL_PATH, "")
+		p := GetEnv(SWAGEN_MODEL_PATH, "")
 		if p == "" {
-			return "", "", errors.New("[ERROR] MODEL_PATH is not set. Set it in environment or .env")
+			return "", "", errors.New("[ERROR] SWAGEN_MODEL_PATH is not set. Set it in environment or .env")
 		}
 		return p, "model", nil
 	case constants.MODE_API:
 		var choice string
-		if err := input.SelectInput(&choice, "[INFO] Which base path to reference?", []string{"MODEL_PATH", "SCHEMA_PATH"}); err != nil {
+		if err := input.SelectInput(&choice, "[INFO] Which base path to reference?", []string{"SWAGEN_MODEL_PATH", "SWAGEN_SCHEMA_PATH"}); err != nil {
 			return "", "", err
 		}
 		switch choice {
-		case "MODEL_PATH":
-			p := GetEnv(MODEL_PATH, "")
+		case "SWAGEN_MODEL_PATH":
+			p := GetEnv(SWAGEN_MODEL_PATH, "")
 			if p == "" {
-				return "", "", errors.New("[ERROR] MODEL_PATH is not set. Set it in environment or .env")
+				return "", "", errors.New("[ERROR] SWAGEN_MODEL_PATH is not set. Set it in environment or .env")
 			}
 			return p, "model", nil
-		case "SCHEMA_PATH":
-			p := GetEnv(SCHEMA_PATH, "")
+		case "SWAGEN_SCHEMA_PATH":
+			p := GetEnv(SWAGEN_SCHEMA_PATH, "")
 			if p == "" {
-				return "", "", errors.New("[ERROR] SCHEMA_PATH is not set. Set it in environment or .env")
+				return "", "", errors.New("[ERROR] SWAGEN_SCHEMA_PATH is not set. Set it in environment or .env")
 			}
 			return p, "schema", nil
 		default:
