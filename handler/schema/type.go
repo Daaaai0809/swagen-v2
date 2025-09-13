@@ -24,6 +24,22 @@ func NewSchema(input input.IInputMethods) Schema {
 	}
 }
 
+func (s Schema) InputPropertyNames() error {
+	for {
+		var propName string
+		if err := s.Input.StringInput(&propName, "Enter a property name (or leave blank to finish)", nil); err != nil {
+			return err
+		}
+		if propName == "" {
+			break
+		}
+
+		s.Properties[propName] = handler.NewProperty(s.Input, propName, s.Property, constants.MODE_SCHEMA)
+	}
+
+	return nil
+}
+
 func (s Schema) InputSchemaName(name *SchemaName) error {
 	var validate input.ValidationFunc = func(input string) error {
 		if input == "" {

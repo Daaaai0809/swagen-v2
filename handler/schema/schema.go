@@ -40,7 +40,7 @@ func (sh *SchemaHandler) HandleGenerateSchemaCommand() error {
 	}
 
 	var fileName string
-	if err := sh.Input.StringInput(&fileName, "Enter the model file name (without extension)", &validate); err != nil {
+	if err := sh.Input.StringInput(&fileName, ">", &validate); err != nil {
 		return err
 	}
 
@@ -53,18 +53,13 @@ func (sh *SchemaHandler) HandleGenerateSchemaCommand() error {
 		return err
 	}
 
-	for {
-		if err := schema.ReadProperty(); err != nil {
+	if err := schema.InputPropertyNames(); err != nil {
+		return err
+	}
+
+	for _, prop := range schema.Properties {
+		if err := prop.ReadAll(); err != nil {
 			return err
-		}
-
-		var addMore bool
-		if sh.Input.BooleanInput(&addMore, "Do you want to add another property?") != nil {
-			return errors.New("failed to read user input for adding more properties")
-		}
-
-		if !addMore {
-			break
 		}
 	}
 
