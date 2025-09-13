@@ -397,8 +397,8 @@ func (mt *MediaType) ReadAll() error {
 }
 
 type Response struct {
-	Input input.IInputMethods `yaml:"-"`
-	Code  string              `yaml:"-"`
+	Input              input.IInputMethods `yaml:"-"`
+	Code               string              `yaml:"-"`
 	OptionalProperties handler.Optionals   `yaml:"-"`
 
 	Description string                `yaml:"description,omitempty"`
@@ -407,10 +407,10 @@ type Response struct {
 
 func NewResponse(input input.IInputMethods, code string, optionalProperties handler.Optionals) *Response {
 	return &Response{
-		Input:   input,
-		Code:    code,
+		Input:              input,
+		Code:               code,
 		OptionalProperties: optionalProperties,
-		Content: make(map[string]*MediaType),
+		Content:            make(map[string]*MediaType),
 	}
 }
 

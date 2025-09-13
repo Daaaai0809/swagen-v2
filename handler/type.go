@@ -15,7 +15,7 @@ type Property struct {
 	PropertyName       string              `yaml:"-"`
 	ParentProperty     *Property           `yaml:"-"` // Optional parent schema for nested properties
 	Mode               constants.InputMode `yaml:"-"` // Mode of the schema (MODEL, SCHEMA, API)
-	OptionalProperties *Optionals           `yaml:"-"`
+	OptionalProperties *Optionals          `yaml:"-"`
 
 	Type       string               `yaml:"type,omitempty"`
 	Format     string               `yaml:"format,omitempty"`
@@ -29,18 +29,18 @@ type Property struct {
 
 func NewProperty(input input.IInputMethods, propertyName string, parentProperty *Property, optionalProperties *Optionals, mode constants.InputMode) *Property {
 	return &Property{
-		Input:          input,
-		PropertyName:   propertyName,
-		ParentProperty: parentProperty,
-		Mode:           mode,
+		Input:              input,
+		PropertyName:       propertyName,
+		ParentProperty:     parentProperty,
+		Mode:               mode,
 		OptionalProperties: optionalProperties,
-		Type:           "",
-		Format:         "",
-		Properties:     make(map[string]*Property),
-		Required:       []string{},
-		Nullable:       false,
-		Items:          nil,
-		Example:        "",
+		Type:               "",
+		Format:             "",
+		Properties:         make(map[string]*Property),
+		Required:           []string{},
+		Nullable:           false,
+		Items:              nil,
+		Example:            "",
 	}
 }
 
@@ -211,7 +211,9 @@ func (s *Property) readPropertyNames() error {
 func (s *Property) ReadAll() error {
 	if s.isReadRef() {
 		var useRef bool
-		if err := s.Input.BooleanInput(&useRef, "Do you want to reference another schema?"); err != nil {
+
+		label := "Do you want to reference another schema? (" + s.PropertyName + ")"
+		if err := s.Input.BooleanInput(&useRef, label); err != nil {
 			return err
 		}
 
@@ -245,7 +247,8 @@ func (s *Property) ReadAll() error {
 		}
 	}
 
-	if s.Type == constants.OBJECT_TYPE {
+	switch s.Type {
+	case constants.OBJECT_TYPE:
 		if err := s.readPropertyNames(); err != nil {
 			return err
 		}
@@ -259,7 +262,7 @@ func (s *Property) ReadAll() error {
 				return err
 			}
 		}
-	} else if s.Type == constants.ARRAY_TYPE {
+	case constants.ARRAY_TYPE:
 		if err := s.ReadItem(); err != nil {
 			return err
 		}
