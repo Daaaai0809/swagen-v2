@@ -6,15 +6,14 @@ import (
 	"github.com/Daaaai0809/swagen-v2/input"
 	"github.com/Daaaai0809/swagen-v2/utils"
 	"github.com/Daaaai0809/swagen-v2/validator"
-	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v2"
 )
 
 type API struct {
-	Input              input.IInputMethods          `yaml:"-"`
+	Input              input.IInputMethods       `yaml:"-"`
 	APIValidator       validator.IInputValidator `yaml:"-"`
-	OptionalProperties Optionals                    `yaml:"-"`
-	ParameterNames     []string                     `yaml:"-"`
+	OptionalProperties handler.Optionals         `yaml:"-"`
+	ParameterNames     []string                  `yaml:"-"`
 
 	OperationID string               `yaml:"operationId,omitempty"`
 	Summary     string               `yaml:"summary,omitempty"`
@@ -56,7 +55,7 @@ func (a *API) InputHTTPStatusCodes(method string) error {
 	}
 
 	for _, code := range statusCodes {
-		a.Responses[code] = NewResponse(a.Input, code)
+		a.Responses[code] = NewResponse(a.Input, code, a.OptionalProperties)
 	}
 
 	return nil
@@ -180,7 +179,7 @@ func (p *Parameter) ReadAll() error {
 
 type ParamSchema struct {
 	Input              input.IInputMethods `yaml:"-"`
-	OptionalProperties Optionals           `yaml:"-"`
+	OptionalProperties handler.Optionals   `yaml:"-"`
 
 	Type    string `yaml:"type,omitempty"`
 	Format  string `yaml:"format,omitempty"`
@@ -306,14 +305,14 @@ func (ps *ParamSchema) ReadAll() error {
 
 type RequestBody struct {
 	Input              input.IInputMethods `yaml:"-"`
-	OptionalProperties Optionals           `yaml:"-"`
+	OptionalProperties handler.Optionals   `yaml:"-"`
 
 	Description string                `yaml:"description,omitempty"`
 	Required    bool                  `yaml:"required,omitempty"`
 	Content     map[string]*MediaType `yaml:"content,omitempty"`
 }
 
-func NewRequestBody(input input.IInputMethods, optionalProperties Optionals) *RequestBody {
+func NewRequestBody(input input.IInputMethods, optionalProperties handler.Optionals) *RequestBody {
 	return &RequestBody{
 		Input:              input,
 		OptionalProperties: optionalProperties,
@@ -330,7 +329,7 @@ func (rq *RequestBody) InputMediaTypes() error {
 
 	for _, mt := range mediaTypes {
 		mimeType := constants.MediaTypeMap[mt]
-		rq.Content[mimeType] = NewMediaType(rq.Input)
+		rq.Content[mimeType] = NewMediaType(rq.Input, rq.OptionalProperties)
 	}
 
 	return nil
@@ -382,10 +381,10 @@ type MediaType struct {
 	// Example string `yaml:"example,omitempty"`
 }
 
-func NewMediaType(input input.IInputMethods) *MediaType {
+func NewMediaType(input input.IInputMethods, optionalProperties handler.Optionals) *MediaType {
 	return &MediaType{
 		Input:  input,
-		Schema: handler.NewProperty(input, "schema", nil, constants.MODE_API),
+		Schema: handler.NewProperty(input, "schema", nil, &optionalProperties, constants.MODE_API),
 	}
 }
 
@@ -400,15 +399,17 @@ func (mt *MediaType) ReadAll() error {
 type Response struct {
 	Input input.IInputMethods `yaml:"-"`
 	Code  string              `yaml:"-"`
+	OptionalProperties handler.Optionals   `yaml:"-"`
 
 	Description string                `yaml:"description,omitempty"`
 	Content     map[string]*MediaType `yaml:"content,omitempty"`
 }
 
-func NewResponse(input input.IInputMethods, code string) *Response {
+func NewResponse(input input.IInputMethods, code string, optionalProperties handler.Optionals) *Response {
 	return &Response{
 		Input:   input,
 		Code:    code,
+		OptionalProperties: optionalProperties,
 		Content: make(map[string]*MediaType),
 	}
 }
@@ -422,7 +423,7 @@ func (r *Response) InputMediaTypes() error {
 
 	for _, mt := range mediaTypes {
 		mimeType := constants.MediaTypeMap[mt]
-		r.Content[mimeType] = NewMediaType(r.Input)
+		r.Content[mimeType] = NewMediaType(r.Input, r.OptionalProperties)
 	}
 
 	return nil
@@ -453,10 +454,4 @@ func (r *Response) ReadAll(code string, isReadDescription bool) error {
 		}
 	}
 	return nil
-}
-
-type Optionals []string
-
-func (o Optionals) Contains(prop string) bool {
-	return slices.Contains(o, prop)
 }

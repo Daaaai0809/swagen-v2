@@ -58,7 +58,7 @@ func (mh *ModelHandler) HandleGenerateModelCommand() error {
 			return err
 		}
 
-		property := handler.NewProperty(mh.Input, propertyName, nil, constants.MODE_MODEL)
+		property := handler.NewProperty(mh.Input, propertyName, nil, nil, constants.MODE_MODEL)
 		if err := property.ReadAll(); err != nil {
 			return err
 		}

@@ -3,6 +3,7 @@ package handler
 import (
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/Daaaai0809/swagen-v2/constants"
 	"github.com/Daaaai0809/swagen-v2/input"
@@ -10,10 +11,11 @@ import (
 )
 
 type Property struct {
-	Input          input.IInputMethods `yaml:"-"`
-	PropertyName   string              `yaml:"-"`
-	ParentProperty *Property           `yaml:"-"` // Optional parent schema for nested properties
-	Mode           constants.InputMode `yaml:"-"` // Mode of the schema (MODEL, SCHEMA, API)
+	Input              input.IInputMethods `yaml:"-"`
+	PropertyName       string              `yaml:"-"`
+	ParentProperty     *Property           `yaml:"-"` // Optional parent schema for nested properties
+	Mode               constants.InputMode `yaml:"-"` // Mode of the schema (MODEL, SCHEMA, API)
+	OptionalProperties *Optionals           `yaml:"-"`
 
 	Type       string               `yaml:"type,omitempty"`
 	Format     string               `yaml:"format,omitempty"`
@@ -25,12 +27,13 @@ type Property struct {
 	Ref        string               `yaml:"$ref,omitempty"` // Reference to another schema
 }
 
-func NewProperty(input input.IInputMethods, propertyName string, parentProperty *Property, mode constants.InputMode) *Property {
+func NewProperty(input input.IInputMethods, propertyName string, parentProperty *Property, optionalProperties *Optionals, mode constants.InputMode) *Property {
 	return &Property{
 		Input:          input,
 		PropertyName:   propertyName,
 		ParentProperty: parentProperty,
 		Mode:           mode,
+		OptionalProperties: optionalProperties,
 		Type:           "",
 		Format:         "",
 		Properties:     make(map[string]*Property),
@@ -135,7 +138,7 @@ func (s *Property) ReadProperty() error {
 		return err
 	}
 
-	property := NewProperty(s.Input, propertyName, s, s.Mode)
+	property := NewProperty(s.Input, propertyName, s, s.OptionalProperties, s.Mode)
 
 	if err := property.ReadAll(); err != nil {
 		return err
@@ -199,7 +202,7 @@ func (s *Property) readPropertyNames() error {
 	}
 
 	for _, name := range propNames {
-		s.Properties[name] = NewProperty(s.Input, name, s, s.Mode)
+		s.Properties[name] = NewProperty(s.Input, name, s, s.OptionalProperties, s.Mode)
 	}
 
 	return nil
@@ -301,4 +304,10 @@ func (p *Property) isReadRef() bool {
 	}
 
 	return p.Mode != constants.MODE_MODEL
+}
+
+type Optionals []string
+
+func (o Optionals) Contains(prop string) bool {
+	return slices.Contains(o, prop)
 }
