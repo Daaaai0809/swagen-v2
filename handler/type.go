@@ -50,10 +50,19 @@ func (s *Property) readType() error {
 }
 
 func (s *Property) readFormat() error {
-	err := s.Input.SelectInput(&s.Format, "Select Property Format", constants.FormatList[s.Type])
+	var format string
+
+	label := "Select Property Format (" + s.PropertyName + ")"
+	err := s.Input.SelectInput(&format, label, constants.FormatList[s.Type])
 	if err != nil {
 		return err
 	}
+
+	if format == constants.FORMAT_NONE {
+		return nil
+	}
+
+	s.Format = format
 
 	return nil
 }
@@ -178,6 +187,19 @@ func (s *Property) readExample() error {
 	return nil
 }
 
+func (s *Property) readPropertyNames() error {
+	var propNames []string
+	if err := s.Input.MultipleStringInput(&propNames, "Enter property names", nil); err != nil {
+		return err
+	}
+
+	for _, name := range propNames {
+		s.Properties[name] = NewProperty(s.Input, name, s, s.Mode)
+	}
+
+	return nil
+}
+
 func (s *Property) ReadAll() error {
 	if s.isReadRef() {
 		var useRef bool
@@ -197,14 +219,7 @@ func (s *Property) ReadAll() error {
 		return err
 	}
 
-	isUseFormat := false
 	if s.Type == constants.STRING_TYPE || s.Type == constants.NUMBER_TYPE || s.Type == constants.INTEGER_TYPE {
-		err := s.Input.BooleanInput(&isUseFormat, "Do you want to specify a format for this property?")
-		if err != nil {
-			return err
-		}
-	}
-	if isUseFormat {
 		if err := s.readFormat(); err != nil {
 			return err
 		}
@@ -223,21 +238,17 @@ func (s *Property) ReadAll() error {
 	}
 
 	if s.Type == constants.OBJECT_TYPE {
-		for {
-			if err := s.ReadProperty(); err != nil {
+		if err := s.readPropertyNames(); err != nil {
 				return err
 			}
 
-			msg := fmt.Sprintf("Do you want to add another property? (%s)", s.PropertyName)
-
-			isAdd := false
-			err := s.Input.BooleanInput(&isAdd, msg)
-			if err != nil {
+		if len(s.Properties) == 0 {
+			err := fmt.Sprintf("[ERROR] at least one property is required for object type (property: %s)", s.PropertyName)
+			return errors.New(err)
+		}
+		for _, prop := range s.Properties {
+			if err := prop.ReadAll(); err != nil {
 				return err
-			}
-
-			if !isAdd {
-				break
 			}
 		}
 	} else if s.Type == constants.ARRAY_TYPE {

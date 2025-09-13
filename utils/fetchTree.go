@@ -21,13 +21,8 @@ import (
 //   - SCHEMA mode: traverse from SWAGEN_MODEL_PATH
 //   - API mode: ask user to choose start path (SWAGEN_MODEL_PATH or SWAGEN_SCHEMA_PATH)
 //   - After selecting a file, parse YAML into Model or Schema(map) and select a field
-<<<<<<< HEAD
 //   - Build JSON Pointer and relative file path (relative to SCHEMA_PATH or API_PATH)
 func InteractiveResolveRef(input input.IInputMethods, mode constants.InputMode) (string, error) {
-=======
-//   - Build JSON Pointer and relative file path (relative to SWAGEN_SCHEMA_PATH or SWAGEN_API_PATH)
-func InteractiveResolveRef(input IInputMethods, mode constants.InputMode) (string, error) {
->>>>>>> 56fd2b9b5f225bf168fa1a5bbf729cb058563cf0
 	// Decide start path and destination base to compute relative path
 	startPath, fileKind, err := decideStartPath(input, mode)
 	if err != nil {
