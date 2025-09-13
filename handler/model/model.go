@@ -1,50 +1,28 @@
 package model
 
 import (
-	"errors"
-	"strings"
-
-	"github.com/Daaaai0809/swagen-v2/constants"
-	"github.com/Daaaai0809/swagen-v2/handler"
 	"github.com/Daaaai0809/swagen-v2/input"
 	"github.com/Daaaai0809/swagen-v2/utils"
+	"github.com/Daaaai0809/swagen-v2/validator"
 )
 
 type ModelHandler struct {
-	Input input.IInputMethods
+	Input     input.IInputMethods
+	Validator validator.IInputValidator
 }
 
-func NewModelHandler(input input.IInputMethods) *ModelHandler {
+func NewModelHandler(input input.IInputMethods, validator validator.IInputValidator) *ModelHandler {
 	return &ModelHandler{
-		Input: input,
+		Input:     input,
+		Validator: validator,
 	}
 }
 
 func (mh *ModelHandler) HandleGenerateModelCommand() error {
-	model := NewModel(mh.Input)
-
-	var validate input.ValidationFunc = func(input string) error {
-		if input == "" {
-			return errors.New("file name is required")
-		}
-
-		// NOTE: 数字スタートを許可しない
-		if strings.HasPrefix(input, "0") {
-			return errors.New("file name cannot start with a number")
-		}
-
-		// NOTE: 英数字とアンダースコアのみを許可
-		for _, char := range input {
-			if !(('a' <= char && char <= 'z') || ('A' <= char && char <= 'Z') || ('0' <= char && char <= '9') || char == '_') {
-				return errors.New("file name can only contain alphanumeric characters and underscores")
-			}
-		}
-
-		return nil
-	}
+	model := NewModel(mh.Input, mh.Validator)
 
 	var fileName string
-	if err := mh.Input.StringInput(&fileName, "Enter the model file name (without extension)", &validate); err != nil {
+	if err := mh.Input.StringInput(&fileName, "Enter the model file name (without extension)", mh.Validator.Validator_Alphanumeric_Underscore()); err != nil {
 		return err
 	}
 
@@ -52,24 +30,13 @@ func (mh *ModelHandler) HandleGenerateModelCommand() error {
 		return err
 	}
 
-	for {
-		var propertyName string
-		if err := model.ReadPropertyName(&propertyName); err != nil {
-			return err
-		}
+	if err := model.ReadPropertyNames(); err != nil {
+		return err
+	}
 
-		property := handler.NewProperty(mh.Input, propertyName, nil, nil, constants.MODE_MODEL)
-		if err := property.ReadAll(); err != nil {
+	for _, prop := range model.Properties {
+		if err := prop.ReadAll(); err != nil {
 			return err
-		}
-		model.Properties[propertyName] = property
-
-		isAdd := false
-		if err := mh.Input.BooleanInput(&isAdd, "Do you want to add another property? (Root Property)"); err != nil {
-			return err
-		}
-		if !isAdd {
-			break
 		}
 	}
 

@@ -1,25 +1,27 @@
 package model
 
 import (
-	"errors"
-
 	"github.com/Daaaai0809/swagen-v2/constants"
 	"github.com/Daaaai0809/swagen-v2/handler"
 	"github.com/Daaaai0809/swagen-v2/input"
 	"github.com/Daaaai0809/swagen-v2/utils"
+	"github.com/Daaaai0809/swagen-v2/validator"
 	"gopkg.in/yaml.v2"
 )
 
 type Model struct {
-	Input      input.IInputMethods          `yaml:"-"`
+	Input     input.IInputMethods       `yaml:"-"`
+	Validator validator.IInputValidator `yaml:"-"`
+
 	Title      string                       `yaml:"title,omitempty"`
 	Type       string                       `yaml:"type"`
 	Properties map[string]*handler.Property `yaml:"properties,omitempty"`
 }
 
-func NewModel(input input.IInputMethods) *Model {
+func NewModel(input input.IInputMethods, validator validator.IInputValidator) *Model {
 	return &Model{
 		Input:      input,
+		Validator:  validator,
 		Title:      "",
 		Type:       constants.OBJECT_TYPE,
 		Properties: make(map[string]*handler.Property),
@@ -27,18 +29,7 @@ func NewModel(input input.IInputMethods) *Model {
 }
 
 func (m *Model) ReadTitle() error {
-	var validate input.ValidationFunc = func(input string) error {
-		if input == "" {
-			return errors.New("[ERROR] title cannot be empty")
-		}
-		if len(input) > 100 {
-			return errors.New("[ERROR] title cannot exceed 100 characters")
-		}
-
-		return nil
-	}
-
-	err := m.Input.StringInput(&m.Title, "Model Title", &validate)
+	err := m.Input.StringInput(&m.Title, "Enter the model title", nil)
 	if err != nil {
 		return err
 	}
@@ -46,21 +37,15 @@ func (m *Model) ReadTitle() error {
 	return nil
 }
 
-func (m *Model) ReadPropertyName(name *string) error {
-	var validate input.ValidationFunc = func(input string) error {
-		if input == "" {
-			return errors.New("[ERROR] property name cannot be empty")
-		}
-		if len(input) > 100 {
-			return errors.New("[ERROR] property name cannot exceed 100 characters")
-		}
-
-		return nil
+func (m *Model) ReadPropertyNames() error {
+	var propertyNames []string
+	if err := m.Input.MultipleStringInput(&propertyNames, "Enter property names", m.Validator.Validator_Alphanumeric_Underscore_Allow_Empty()); err != nil {
+		return err
 	}
 
-	err := m.Input.StringInput(name, "Property Name", &validate)
-	if err != nil {
-		return err
+	for _, name := range propertyNames {
+		property := handler.NewProperty(m.Input, name, nil, &handler.Optionals{}, constants.MODE_MODEL)
+		m.Properties[name] = property
 	}
 
 	return nil

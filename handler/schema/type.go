@@ -21,7 +21,7 @@ func NewSchema(input input.IInputMethods, validator validator.IInputValidator) S
 	return Schema{
 		Input:     input,
 		Validator: validator,
-		Property:  handler.NewProperty(input, "", nil, nil, constants.MODE_SCHEMA),
+		Property:  handler.NewProperty(input, "", nil, &handler.Optionals{}, constants.MODE_SCHEMA),
 	}
 }
 
@@ -35,7 +35,7 @@ func (s Schema) InputPropertyNames() error {
 			break
 		}
 
-		s.Properties[propName] = handler.NewProperty(s.Input, propName, s.Property, nil, constants.MODE_SCHEMA)
+		s.Properties[propName] = handler.NewProperty(s.Input, propName, s.Property, s.OptionalProperties, constants.MODE_SCHEMA)
 	}
 
 	return nil

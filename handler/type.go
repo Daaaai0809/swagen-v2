@@ -209,6 +209,7 @@ func (s *Property) readPropertyNames() error {
 }
 
 func (s *Property) ReadAll() error {
+	fmt.Println("isReadRef:", s.isReadRef())
 	if s.isReadRef() {
 		var useRef bool
 
@@ -268,7 +269,7 @@ func (s *Property) ReadAll() error {
 		}
 	}
 
-	if constants.IsExamplableType(s.Type) {
+	if constants.IsExamplableType(s.Type) && s.OptionalProperties.Contains("example") {
 		isAddExample := false
 		err := s.Input.BooleanInput(&isAddExample, "Do you want to add an example value for this property?")
 		if err != nil {
@@ -302,11 +303,7 @@ func (p *Property) isReadNullable() bool {
 }
 
 func (p *Property) isReadRef() bool {
-	if p.ParentProperty == nil {
-		return true
-	}
-
-	return p.Mode != constants.MODE_MODEL
+	return p.Mode != constants.MODE_MODEL && p.ParentProperty != nil
 }
 
 type Optionals []string
