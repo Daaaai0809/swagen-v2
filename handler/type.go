@@ -10,18 +10,19 @@ import (
 )
 
 type Property struct {
-	Input          input.IInputMethods  `yaml:"-"`
-	PropertyName   string               `yaml:"-"`
-	ParentProperty *Property            `yaml:"-"` // Optional parent schema for nested properties
-	Mode           constants.InputMode  `yaml:"-"` // Mode of the schema (MODEL, SCHEMA, API)
-	Type           string               `yaml:"type,omitempty"`
-	Format         string               `yaml:"format,omitempty"`
-	Properties     map[string]*Property `yaml:"properties,omitempty"`
-	Required       []string             `yaml:"required,omitempty"`
-	Nullable       bool                 `yaml:"nullable,omitempty"`
-	Items          *Property            `yaml:"items,omitempty"`
-	Example        string               `yaml:"example,omitempty"`
-	Ref            string               `yaml:"$ref,omitempty"` // Reference to another schema
+	Input          input.IInputMethods `yaml:"-"`
+	PropertyName   string              `yaml:"-"`
+	ParentProperty *Property           `yaml:"-"` // Optional parent schema for nested properties
+	Mode           constants.InputMode `yaml:"-"` // Mode of the schema (MODEL, SCHEMA, API)
+
+	Type       string               `yaml:"type,omitempty"`
+	Format     string               `yaml:"format,omitempty"`
+	Properties map[string]*Property `yaml:"properties,omitempty"`
+	Required   []string             `yaml:"required,omitempty"`
+	Nullable   bool                 `yaml:"nullable,omitempty"`
+	Items      *Property            `yaml:"items,omitempty"`
+	Example    string               `yaml:"example,omitempty"`
+	Ref        string               `yaml:"$ref,omitempty"` // Reference to another schema
 }
 
 func NewProperty(input input.IInputMethods, propertyName string, parentProperty *Property, mode constants.InputMode) *Property {
@@ -41,7 +42,8 @@ func NewProperty(input input.IInputMethods, propertyName string, parentProperty 
 }
 
 func (s *Property) readType() error {
-	err := s.Input.SelectInput(&s.Type, "Select Property Type", constants.FieldTypeList)
+	label := "Select Property Type (" + s.PropertyName + ")"
+	err := s.Input.SelectInput(&s.Type, label, constants.FieldTypeList)
 	if err != nil {
 		return err
 	}
@@ -69,7 +71,9 @@ func (s *Property) readFormat() error {
 
 func (s *Property) readRequired() error {
 	isRequired := false
-	err := s.Input.BooleanInput(&isRequired, "Is this property required?")
+
+	label := "Is this property required? (" + s.PropertyName + ")"
+	err := s.Input.BooleanInput(&isRequired, label)
 	if err != nil {
 		return err
 	}
@@ -82,7 +86,8 @@ func (s *Property) readRequired() error {
 }
 
 func (s *Property) readNullable() error {
-	err := s.Input.BooleanInput(&s.Nullable, "Is this property nullable?")
+	label := "Is this property nullable? (" + s.PropertyName + ")"
+	err := s.Input.BooleanInput(&s.Nullable, label)
 	if err != nil {
 		return err
 	}
@@ -239,8 +244,8 @@ func (s *Property) ReadAll() error {
 
 	if s.Type == constants.OBJECT_TYPE {
 		if err := s.readPropertyNames(); err != nil {
-				return err
-			}
+			return err
+		}
 
 		if len(s.Properties) == 0 {
 			err := fmt.Sprintf("[ERROR] at least one property is required for object type (property: %s)", s.PropertyName)
