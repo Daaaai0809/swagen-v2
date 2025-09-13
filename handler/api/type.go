@@ -289,25 +289,17 @@ func (ps *ParamSchema) ReadAll() error {
 		}
 	}
 
-	isReadMax := false
-	if err := ps.Input.BooleanInput(&isReadMax, "Do you want to set a maximum value for the parameter?"); err != nil {
-		return err
-	}
-	if isReadMax && constants.IsMaxMinApplicableType(ps.Type) {
-		if err := ps.ReadMax(); err != nil {
-			return err
-		}
-	}
+	// if constants.IsMaxMinApplicableType(ps.Type) {
+	// 	if err := ps.ReadMax(); err != nil {
+	// 		return err
+	// 	}
+	// }
 
-	isReadMin := false
-	if err := ps.Input.BooleanInput(&isReadMin, "Do you want to set a minimum value for the parameter?"); err != nil {
-		return err
-	}
-	if isReadMin && constants.IsMaxMinApplicableType(ps.Type) {
-		if err := ps.ReadMin(); err != nil {
-			return err
-		}
-	}
+	// if constants.IsMaxMinApplicableType(ps.Type) {
+	// 	if err := ps.ReadMin(); err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	return nil
 }
