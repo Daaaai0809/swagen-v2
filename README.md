@@ -50,4 +50,4 @@ All three variables are required. Missing any of them may cause the CLI to fail.
 ## 6. Bugs and suggestions
 
 - Please open an issue in this repository.
-- Or DM https://x.com/big_doge_
+- Or DM [https://x.com/big_doge_]
