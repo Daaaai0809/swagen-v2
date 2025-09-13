@@ -25,9 +25,9 @@ go install github.com/DAAAai0809/swagen-v2@latest
 
 `swagen-v2` を使用するプロジェクトのルートディレクトリに、`.env.example` を参考に `.env` を作成してください。
 
-- `MODEL_PATH`: モデルスキーマを生成するディレクトリ
-- `SCHEMA_PATH`: request/response スキーマを生成するディレクトリ
-- `API_PATH`: path スキーマを生成するディレクトリ
+- `SWAGEN_MODEL_PATH`: モデルスキーマを生成するディレクトリ
+- `SWAGEN_SCHEMA_PATH`: request/response スキーマを生成するディレクトリ
+- `SWAGEN_API_PATH`: path スキーマを生成するディレクトリ
 
 いずれか 1 つでも欠けると、正常に動作しません。
 

@@ -1,133 +1,96 @@
 package api
 
 import (
-	"errors"
-	"strings"
-
 	"github.com/Daaaai0809/swagen-v2/constants"
+	"github.com/Daaaai0809/swagen-v2/input"
 	"github.com/Daaaai0809/swagen-v2/utils"
+	"github.com/Daaaai0809/swagen-v2/validator"
 )
 
 type APIHandler struct {
-	Input utils.IInputMethods
+	Input        input.IInputMethods
+	APIValidator validator.IInputValidator
 }
 
-func NewAPIHandler(input utils.IInputMethods) *APIHandler {
+func NewAPIHandler(input input.IInputMethods, validator validator.IInputValidator) *APIHandler {
 	return &APIHandler{
-		Input: input,
+		Input:        input,
+		APIValidator: validator,
 	}
 }
 
 func (ah *APIHandler) HandleGenerateAPICommand() error {
-	var validate utils.ValidationFunc = func(input string) error {
-		if input == "" {
-			return errors.New("file name is required")
-		}
-
-		// NOTE: 数字スタートを許可しない
-		if strings.HasPrefix(input, "0") {
-			return errors.New("file name cannot start with a number")
-		}
-
-		// NOTE: 英数字とアンダースコアのみを許可
-		for _, char := range input {
-			if !(('a' <= char && char <= 'z') || ('A' <= char && char <= 'Z') || ('0' <= char && char <= '9') || char == '_') {
-				return errors.New("file name can only contain alphanumeric characters and underscores")
-			}
-		}
-
-		return nil
-	}
-
 	var fileName string
-	if err := ah.Input.StringInput(&fileName, "Enter the API file name (without extension)", &validate); err != nil {
+	if err := ah.Input.StringInput(&fileName, "Enter the API file name (without extension)", ah.APIValidator.Validator_Alphanumeric_Underscore()); err != nil {
 		return err
 	}
 
-	api := NewAPI()
-	// Ensure Input is set before any read methods to avoid nil dereference
-	api.Input = ah.Input
-
-	if err := api.ReadOperationID(); err != nil {
-		return err
-	}
+	api := NewAPI(ah.Input, ah.APIValidator)
 
 	var method string
 	if err := ah.Input.SelectInput(&method, "Select the HTTP method for the API", constants.HTTPMethods); err != nil {
 		return err
 	}
 
-	isReadSummary := false
-	if err := ah.Input.BooleanInput(&isReadSummary, "Do you want to add a summary?"); err != nil {
+	if err := api.InputOptionalProperties(method); err != nil {
 		return err
 	}
-	if isReadSummary {
+
+	if api.OptionalProperties.Contains(constants.PROPERTY_OPERATION_ID) {
+		if err := api.ReadOperationID(); err != nil {
+			return err
+		}
+	}
+
+	if api.OptionalProperties.Contains(constants.PROPERTY_SUMMARY) {
 		if err := api.ReadSummary(); err != nil {
 			return err
 		}
 	}
 
-	isReadDescription := false
-	if err := ah.Input.BooleanInput(&isReadDescription, "Do you want to add a description?"); err != nil {
-		return err
-	}
-	if isReadDescription {
+	if api.OptionalProperties.Contains(constants.PROPERTY_DESCRIPTION) {
 		if err := api.ReadDescription(); err != nil {
 			return err
 		}
 	}
 
-	isReadTags := false
-	if err := ah.Input.BooleanInput(&isReadTags, "Do you want to add tags?"); err != nil {
-		return err
-	}
-	if isReadTags {
+	if api.OptionalProperties.Contains(constants.PROPERTY_TAGS) {
 		if err := api.ReadTags(); err != nil {
 			return err
 		}
 	}
 
-	for {
-		var addParam bool
-		if err := ah.Input.BooleanInput(&addParam, "Do you want to add a parameter?"); err != nil {
+	if api.OptionalProperties.Contains(constants.PROPERTY_PARAMETERS) {
+		if err := api.ReadParameterNames(); err != nil {
 			return err
 		}
 
-		if !addParam {
-			break
-		}
-
-		if err := api.ReadParameter(); err != nil {
-			return err
+		for _, name := range api.ParameterNames {
+			param := NewParameter(api.Input, name)
+			api.Parameters = append(api.Parameters, param)
+			if err := param.ReadAll(); err != nil {
+				return err
+			}
 		}
 	}
 
-	isReadRequestBody := false
-	if err := ah.Input.BooleanInput(&isReadRequestBody, "Do you want to add a request body?"); err != nil {
-		return err
-	}
-	if isReadRequestBody {
+	if api.OptionalProperties.Contains(constants.PROPERTY_REQUEST_BODY) {
 		if err := api.ReadRequestBody(); err != nil {
 			return err
 		}
 	}
 
-	for {
-		var addResponse bool
-		if err := ah.Input.BooleanInput(&addResponse, "Do you want to add a response?"); err != nil {
-			return err
-		}
+	if err := api.InputHTTPStatusCodes(method); err != nil {
+		return err
+	}
 
-		if !addResponse {
-			break
-		}
-
-		if err := api.ReadResponse(); err != nil {
+	for code, resp := range api.Responses {
+		if err := resp.ReadAll(code, api.OptionalProperties.Contains(constants.PROPERTY_DESCRIPTION)); err != nil {
 			return err
 		}
 	}
 
-	if err := api.GenerateFile(fileName, constants.HTTPMethodsMap[method], utils.GetEnv(utils.API_PATH, "path/")); err != nil {
+	if err := api.GenerateFile(fileName, constants.HTTPMethodsMap[method], utils.GetEnv(utils.SWAGEN_API_PATH, "path/")); err != nil {
 		return err
 	}
 

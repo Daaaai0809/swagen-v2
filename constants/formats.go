@@ -1,6 +1,10 @@
 package constants
 
 const (
+	FORMAT_NONE = "None"
+)
+
+const (
 	FORMAT_DATE                  = "date"
 	FORMAT_DATE_TIME             = "date-time"
 	FORMAT_PASSWORD              = "password"
@@ -20,6 +24,7 @@ const (
 )
 
 var FormatStringList = []string{
+	FORMAT_NONE,
 	FORMAT_DATE,
 	FORMAT_DATE_TIME,
 	FORMAT_PASSWORD,
@@ -44,6 +49,7 @@ const (
 )
 
 var FormatNumberList = []string{
+	FORMAT_NONE,
 	FORMAT_FLOAT,
 	FORMAT_DOUBLE,
 }
@@ -54,6 +60,7 @@ const (
 )
 
 var FormatIntegerList = []string{
+	FORMAT_NONE,
 	FORMAT_INT32,
 	FORMAT_INT64,
 }

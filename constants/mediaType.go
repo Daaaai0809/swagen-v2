@@ -7,6 +7,7 @@ const (
 	TEXT_CSS_ID
 	TEXT_JAVASCRIPT_ID
 	TEXT_CSV_ID
+	TEXT_EVENT_STREAM_ID
 	APPLICATION_JSON_ID
 	APPLICATION_JSON_PATCH_JSON_ID
 	APPLICATION_LD_JSON_ID
@@ -41,6 +42,7 @@ const (
 	TEXT_CSS                          = "text/css"
 	TEXT_JAVASCRIPT                   = "text/javascript"
 	TEXT_CSV                          = "text/csv"
+	TEXT_EVENT_STREAM                 = "text/event-stream"
 	APPLICATION_JSON                  = "application/json"
 	APPLICATION_JSON_PATCH_JSON       = "application/json-patch+json"
 	APPLICATION_LD_JSON               = "application/ld+json"
@@ -68,6 +70,15 @@ const (
 	VIDEO_MP4                         = "video/mp4"
 	VIDEO_OGG                         = "video/ogg"
 	VIDEO_WEBM                        = "video/webm"
+
+	_MIME_KEY_JSON = "json"
+	_MIME_KEY_HTML = "html"
+	_MIME_KEY_XML  = "xml"
+	_MIME_KEY_CSV  = "csv"
+	_MIME_KEY_FORM = "form"
+	_MIME_KEY_TEXT = "text"
+	_MIME_KEY_BIN  = "bin"
+	_MIME_KEY_SSE  = "sse"
 )
 
 var MediaTypeList = []string{
@@ -104,4 +115,28 @@ var MediaTypeList = []string{
 	VIDEO_MP4,
 	VIDEO_OGG,
 	VIDEO_WEBM,
+}
+
+var MimeKeys = []string{
+	_MIME_KEY_JSON,
+	_MIME_KEY_HTML,
+	_MIME_KEY_XML,
+	_MIME_KEY_CSV,
+	_MIME_KEY_FORM,
+	_MIME_KEY_TEXT,
+	_MIME_KEY_BIN,
+	_MIME_KEY_SSE,
+}
+
+type MinimumMediaTypeMap map[string]string
+
+var MediaTypeMap = MinimumMediaTypeMap{
+	_MIME_KEY_JSON: APPLICATION_JSON,
+	_MIME_KEY_HTML: TEXT_HTML,
+	_MIME_KEY_XML:  APPLICATION_XML,
+	_MIME_KEY_CSV:  TEXT_CSV,
+	_MIME_KEY_FORM: MULTIPART_FORM_DATA,
+	_MIME_KEY_TEXT: TEXT_PLAIN,
+	_MIME_KEY_BIN:  APPLICATION_OCTET_STREAM,
+	_MIME_KEY_SSE:  TEXT_EVENT_STREAM,
 }

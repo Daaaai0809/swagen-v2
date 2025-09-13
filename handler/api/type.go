@@ -1,16 +1,19 @@
 package api
 
 import (
-	"errors"
-
 	"github.com/Daaaai0809/swagen-v2/constants"
 	"github.com/Daaaai0809/swagen-v2/handler"
+	"github.com/Daaaai0809/swagen-v2/input"
 	"github.com/Daaaai0809/swagen-v2/utils"
+	"github.com/Daaaai0809/swagen-v2/validator"
 	"gopkg.in/yaml.v2"
 )
 
 type API struct {
-	Input utils.IInputMethods `yaml:"-"`
+	Input              input.IInputMethods       `yaml:"-"`
+	APIValidator       validator.IInputValidator `yaml:"-"`
+	OptionalProperties handler.Optionals         `yaml:"-"`
+	ParameterNames     []string                  `yaml:"-"`
 
 	OperationID string               `yaml:"operationId,omitempty"`
 	Summary     string               `yaml:"summary,omitempty"`
@@ -21,16 +24,56 @@ type API struct {
 	Responses   map[string]*Response `yaml:"responses,omitempty"`
 }
 
-func NewAPI() *API {
+func NewAPI(input input.IInputMethods, validator validator.IInputValidator) *API {
 	return &API{
-		Parameters:  []*Parameter{},
-		RequestBody: nil,
-		Responses:   make(map[string]*Response),
+		Input:        input,
+		APIValidator: validator,
+		Parameters:   []*Parameter{},
+		RequestBody:  nil,
+		Responses:    make(map[string]*Response),
 	}
 }
 
+func (a *API) InputOptionalProperties(method string) error {
+	var optionals []string
+
+	if err := a.Input.MultipleSelectInput(&optionals, "Select optional properties", constants.OptionalProperties[method], nil); err != nil {
+		return err
+	}
+
+	for _, prop := range optionals {
+		a.OptionalProperties = append(a.OptionalProperties, prop)
+	}
+
+	return nil
+}
+
+func (a *API) InputHTTPStatusCodes(method string) error {
+	var statusCodes []string
+	if err := a.Input.MultipleSelectInput(&statusCodes, "Select HTTP status codes for responses", constants.HTTPStatusMap[method], nil); err != nil {
+		return err
+	}
+
+	for _, code := range statusCodes {
+		a.Responses[code] = NewResponse(a.Input, code, a.OptionalProperties)
+	}
+
+	return nil
+}
+
+func (a *API) ReadParameterNames() error {
+	var names []string
+	if err := a.Input.MultipleStringInput(&names, "Enter parameter names", a.APIValidator.Validator_Alphanumeric_Underscore_Allow_Empty()); err != nil {
+		return err
+	}
+	for _, name := range names {
+		a.ParameterNames = append(a.ParameterNames, name)
+	}
+	return nil
+}
+
 func (a *API) ReadOperationID() error {
-	if err := a.Input.StringInput(&a.OperationID, "Enter the Operation ID for the API (optional)", nil); err != nil {
+	if err := a.Input.StringInput(&a.OperationID, "Enter the Operation ID for the API", a.APIValidator.Validator_Alphanumeric_Underscore()); err != nil {
 		return err
 	}
 	return nil
@@ -70,110 +113,14 @@ func (a *API) ReadTags() error {
 	return nil
 }
 
-func (a *API) ReadParameter() error {
-	param := NewParameter(a.Input)
-
-	if err := param.ReadIn(); err != nil {
-		return err
-	}
-
-	if err := param.ReadName(); err != nil {
-		return err
-	}
-
-	if err := param.Schema.ReadAll(); err != nil {
-		return err
-	}
-
-	a.Parameters = append(a.Parameters, param)
-
-	return nil
-}
-
 func (a *API) ReadRequestBody() error {
-	reqBody := NewRequestBody(a.Input)
+	reqBody := NewRequestBody(a.Input, a.OptionalProperties)
 
-	var description string
-	if err := reqBody.Input.StringInput(&description, "Enter a description for the request body (optional)", nil); err != nil {
+	if err := reqBody.ReadAll(); err != nil {
 		return err
-	}
-	reqBody.Description = description
-
-	if err := reqBody.Input.BooleanInput(&reqBody.Required, "Is the request body required?"); err != nil {
-		return err
-	}
-
-	for {
-		var mediaType string
-		if err := reqBody.Input.SelectInput(&mediaType, "Select a media type for the request body (or leave empty to finish)", constants.MediaTypeList); err != nil {
-			return err
-		}
-
-		if mediaType == "" {
-			break
-		}
-
-		mt := NewMediaType(a.Input)
-		if err := mt.Schema.ReadAll(); err != nil {
-			return err
-		}
-
-		reqBody.Content[mediaType] = mt
-
-		var addMore bool
-		if err := a.Input.BooleanInput(&addMore, "Do you want to add another media type?"); err != nil {
-			return err
-		}
-		if !addMore {
-			break
-		}
 	}
 
 	a.RequestBody = reqBody
-	return nil
-}
-
-func (a *API) ReadResponse() error {
-	resp := NewResponse(a.Input)
-
-	var httpStatus string
-	if err := resp.Input.SelectInput(&httpStatus, "Select the HTTP status code for the response", constants.HTTPStatusList); err != nil {
-		return err
-	}
-
-	var description string
-	if err := resp.Input.StringInput(&description, "Enter a description for the response (optional)", nil); err != nil {
-		return err
-	}
-	resp.Description = description
-
-	for {
-		var mediaType string
-		if err := resp.Input.SelectInput(&mediaType, "Select a media type for the response (or leave empty to finish)", constants.MediaTypeList); err != nil {
-			return err
-		}
-
-		if mediaType == "" {
-			break
-		}
-
-		mt := NewMediaType(a.Input)
-		if err := mt.Schema.ReadAll(); err != nil {
-			return err
-		}
-
-		resp.Content[mediaType] = mt
-
-		var addMore bool
-		if err := a.Input.BooleanInput(&addMore, "Do you want to add another media type?"); err != nil {
-			return err
-		}
-		if !addMore {
-			break
-		}
-	}
-
-	a.Responses[httpStatus] = resp
 	return nil
 }
 
@@ -193,22 +140,24 @@ func (a *API) GenerateFile(fileName, method, path string) error {
 }
 
 type Parameter struct {
-	Input utils.IInputMethods `yaml:"-"`
+	Input input.IInputMethods `yaml:"-"`
 
 	In     string       `yaml:"in,omitempty"`
 	Name   string       `yaml:"name,omitempty"`
 	Schema *ParamSchema `yaml:"schema,omitempty"`
 }
 
-func NewParameter(input utils.IInputMethods) *Parameter {
+func NewParameter(input input.IInputMethods, name string) *Parameter {
 	return &Parameter{
 		Input:  input,
+		Name:   name,
 		Schema: NewParamSchema(input),
 	}
 }
 
 func (p *Parameter) ReadIn() error {
-	err := p.Input.SelectInput(&p.In, "Select Parameter Location", constants.ReflableParamIn)
+	label := "Select Parameter Location (" + p.Name + ")"
+	err := p.Input.SelectInput(&p.In, label, constants.ReflableParamIn)
 	if err != nil {
 		return err
 	}
@@ -216,15 +165,12 @@ func (p *Parameter) ReadIn() error {
 	return nil
 }
 
-func (p *Parameter) ReadName() error {
-	var validate utils.ValidationFunc = func(input string) error {
-		if input == "" {
-			return errors.New("parameter name is required")
-		}
-		return nil
+func (p *Parameter) ReadAll() error {
+	if err := p.ReadIn(); err != nil {
+		return err
 	}
 
-	if err := p.Input.StringInput(&p.Name, "Enter the parameter name", &validate); err != nil {
+	if err := p.Schema.ReadAll(); err != nil {
 		return err
 	}
 
@@ -232,7 +178,8 @@ func (p *Parameter) ReadName() error {
 }
 
 type ParamSchema struct {
-	Input utils.IInputMethods `yaml:"-"`
+	Input              input.IInputMethods `yaml:"-"`
+	OptionalProperties handler.Optionals   `yaml:"-"`
 
 	Type    string `yaml:"type,omitempty"`
 	Format  string `yaml:"format,omitempty"`
@@ -242,7 +189,7 @@ type ParamSchema struct {
 	Ref     string `yaml:"$ref,omitempty"`
 }
 
-func NewParamSchema(input utils.IInputMethods) *ParamSchema {
+func NewParamSchema(input input.IInputMethods) *ParamSchema {
 	return &ParamSchema{
 		Input: input,
 	}
@@ -258,11 +205,17 @@ func (ps *ParamSchema) ReadType() error {
 }
 
 func (ps *ParamSchema) ReadFormat() error {
-	err := ps.Input.SelectInput(&ps.Format, "Select Parameter Format", constants.FormatList[ps.Type])
+	var format string
+	err := ps.Input.SelectInput(&format, "Select Parameter Format", constants.FormatList[ps.Type])
 	if err != nil {
 		return err
 	}
 
+	if ps.Format == constants.FORMAT_NONE {
+		return nil
+	}
+
+	ps.Format = format
 	return nil
 }
 
@@ -323,76 +276,115 @@ func (ps *ParamSchema) ReadAll() error {
 		return err
 	}
 
-	isReadFormat := false
-	if err := ps.Input.BooleanInput(&isReadFormat, "Do you want to set a format for the parameter?"); err != nil {
-		return err
-	}
-	if isReadFormat && constants.IsFormatableType(ps.Type) {
+	if constants.IsFormatableType(ps.Type) {
 		if err := ps.ReadFormat(); err != nil {
 			return err
 		}
 	}
 
-	isReadExample := false
-	if err := ps.Input.BooleanInput(&isReadExample, "Do you want to add an example value for the parameter?"); err != nil {
-		return err
-	}
-	if isReadExample && constants.IsExamplableType(ps.Type) {
+	if constants.IsExamplableType(ps.Type) && ps.OptionalProperties.Contains(constants.PROPERTY_EXAMPLE) {
 		if err := ps.ReadExample(); err != nil {
 			return err
 		}
 	}
 
-	isReadMax := false
-	if err := ps.Input.BooleanInput(&isReadMax, "Do you want to set a maximum value for the parameter?"); err != nil {
-		return err
-	}
-	if isReadMax && constants.IsMaxMinApplicableType(ps.Type) {
-		if err := ps.ReadMax(); err != nil {
-			return err
-		}
-	}
+	// if constants.IsMaxMinApplicableType(ps.Type) {
+	// 	if err := ps.ReadMax(); err != nil {
+	// 		return err
+	// 	}
+	// }
 
-	isReadMin := false
-	if err := ps.Input.BooleanInput(&isReadMin, "Do you want to set a minimum value for the parameter?"); err != nil {
-		return err
-	}
-	if isReadMin && constants.IsMaxMinApplicableType(ps.Type) {
-		if err := ps.ReadMin(); err != nil {
-			return err
-		}
-	}
+	// if constants.IsMaxMinApplicableType(ps.Type) {
+	// 	if err := ps.ReadMin(); err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	return nil
 }
 
 type RequestBody struct {
-	Input utils.IInputMethods `yaml:"-"`
+	Input              input.IInputMethods `yaml:"-"`
+	OptionalProperties handler.Optionals   `yaml:"-"`
 
 	Description string                `yaml:"description,omitempty"`
 	Required    bool                  `yaml:"required,omitempty"`
 	Content     map[string]*MediaType `yaml:"content,omitempty"`
 }
 
-func NewRequestBody(input utils.IInputMethods) *RequestBody {
+func NewRequestBody(input input.IInputMethods, optionalProperties handler.Optionals) *RequestBody {
 	return &RequestBody{
-		Input:   input,
-		Content: make(map[string]*MediaType),
+		Input:              input,
+		OptionalProperties: optionalProperties,
+		Content:            make(map[string]*MediaType),
 	}
 }
 
+func (rq *RequestBody) InputMediaTypes() error {
+	var mediaTypes []string
+	label := "Select media types for the request body"
+	if err := rq.Input.MultipleSelectInput(&mediaTypes, label, constants.MimeKeys, nil); err != nil {
+		return err
+	}
+
+	for _, mt := range mediaTypes {
+		mimeType := constants.MediaTypeMap[mt]
+		rq.Content[mimeType] = NewMediaType(rq.Input, rq.OptionalProperties)
+	}
+
+	return nil
+}
+
+func (rq *RequestBody) ReadDescription() error {
+	label := "Enter a description for the request body"
+	if err := rq.Input.StringInput(&rq.Description, label, nil); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (rq *RequestBody) ReadRequired() error {
+	if err := rq.Input.BooleanInput(&rq.Required, "Is the request body required?"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (rq *RequestBody) ReadAll() error {
+	if rq.OptionalProperties.Contains(constants.PROPERTY_DESCRIPTION) {
+		if err := rq.ReadDescription(); err != nil {
+			return err
+		}
+	}
+
+	if err := rq.ReadRequired(); err != nil {
+		return err
+	}
+
+	if err := rq.InputMediaTypes(); err != nil {
+		return err
+	}
+
+	for _, mt := range rq.Content {
+		if err := mt.ReadAll(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 type MediaType struct {
-	Input utils.IInputMethods `yaml:"-"`
+	Input input.IInputMethods `yaml:"-"`
 
 	Schema *handler.Property `yaml:"schema,omitempty"`
 	// TODO: Implement examples
 	// Example string `yaml:"example,omitempty"`
 }
 
-func NewMediaType(input utils.IInputMethods) *MediaType {
+func NewMediaType(input input.IInputMethods, optionalProperties handler.Optionals) *MediaType {
 	return &MediaType{
 		Input:  input,
-		Schema: handler.NewProperty(input, "schema", nil, constants.MODE_API),
+		Schema: handler.NewProperty(input, "schema", nil, &optionalProperties, constants.MODE_API),
 	}
 }
 
@@ -405,15 +397,61 @@ func (mt *MediaType) ReadAll() error {
 }
 
 type Response struct {
-	Input utils.IInputMethods `yaml:"-"`
+	Input              input.IInputMethods `yaml:"-"`
+	Code               string              `yaml:"-"`
+	OptionalProperties handler.Optionals   `yaml:"-"`
 
 	Description string                `yaml:"description,omitempty"`
 	Content     map[string]*MediaType `yaml:"content,omitempty"`
 }
 
-func NewResponse(input utils.IInputMethods) *Response {
+func NewResponse(input input.IInputMethods, code string, optionalProperties handler.Optionals) *Response {
 	return &Response{
-		Input:   input,
-		Content: make(map[string]*MediaType),
+		Input:              input,
+		Code:               code,
+		OptionalProperties: optionalProperties,
+		Content:            make(map[string]*MediaType),
 	}
+}
+
+func (r *Response) InputMediaTypes() error {
+	var mediaTypes []string
+	label := "Select media types for the response (" + r.Code + ")"
+	if err := r.Input.MultipleSelectInput(&mediaTypes, label, constants.MimeKeys, nil); err != nil {
+		return err
+	}
+
+	for _, mt := range mediaTypes {
+		mimeType := constants.MediaTypeMap[mt]
+		r.Content[mimeType] = NewMediaType(r.Input, r.OptionalProperties)
+	}
+
+	return nil
+}
+
+func (r *Response) ReadDescription(code string) error {
+	label := "Enter a description for the response (" + code + ")"
+	if err := r.Input.StringInput(&r.Description, label, nil); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *Response) ReadAll(code string, isReadDescription bool) error {
+	if isReadDescription {
+		if err := r.ReadDescription(code); err != nil {
+			return err
+		}
+	}
+
+	if err := r.InputMediaTypes(); err != nil {
+		return err
+	}
+
+	for _, mt := range r.Content {
+		if err := mt.ReadAll(); err != nil {
+			return err
+		}
+	}
+	return nil
 }

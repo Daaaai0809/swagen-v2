@@ -5,9 +5,9 @@ import (
 )
 
 const (
-	MODEL_PATH  = "MODEL_PATH"
-	SCHEMA_PATH = "SCHEMA_PATH"
-	API_PATH    = "API_PATH"
+	SWAGEN_MODEL_PATH  = "SWAGEN_MODEL_PATH"
+	SWAGEN_SCHEMA_PATH = "SWAGEN_SCHEMA_PATH"
+	SWAGEN_API_PATH    = "SWAGEN_API_PATH"
 )
 
 func GetEnv(key, defaultValue string) string {
