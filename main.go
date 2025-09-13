@@ -21,7 +21,7 @@ func main() {
 }
 
 func validateEnv() error {
-	requiredVars := []string{"MODEL_PATH", "SCHEMA_PATH", "API_PATH"}
+	requiredVars := []string{"SWAGEN_MODEL_PATH", "SWAGEN_SCHEMA_PATH", "SWAGEN_API_PATH"}
 	for _, envVar := range requiredVars {
 		if value := os.Getenv(envVar); value == "" {
 			return fmt.Errorf("required environment variable %s is not set", envVar)

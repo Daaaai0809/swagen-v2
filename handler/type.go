@@ -3,44 +3,50 @@ package handler
 import (
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/Daaaai0809/swagen-v2/constants"
+	"github.com/Daaaai0809/swagen-v2/input"
 	"github.com/Daaaai0809/swagen-v2/utils"
 )
 
 type Property struct {
-	Input          utils.IInputMethods  `yaml:"-"`
-	PropertyName   string               `yaml:"-"`
-	ParentProperty *Property            `yaml:"-"` // Optional parent schema for nested properties
-	Mode           constants.InputMode  `yaml:"-"` // Mode of the schema (MODEL, SCHEMA, API)
-	Type           string               `yaml:"type,omitempty"`
-	Format         string               `yaml:"format,omitempty"`
-	Properties     map[string]*Property `yaml:"properties,omitempty"`
-	Required       []string             `yaml:"required,omitempty"`
-	Nullable       bool                 `yaml:"nullable,omitempty"`
-	Items          *Property            `yaml:"items,omitempty"`
-	Example        string               `yaml:"example,omitempty"`
-	Ref            string               `yaml:"$ref,omitempty"` // Reference to another schema
+	Input              input.IInputMethods `yaml:"-"`
+	PropertyName       string              `yaml:"-"`
+	ParentProperty     *Property           `yaml:"-"` // Optional parent schema for nested properties
+	Mode               constants.InputMode `yaml:"-"` // Mode of the schema (MODEL, SCHEMA, API)
+	OptionalProperties *Optionals          `yaml:"-"`
+
+	Type       string               `yaml:"type,omitempty"`
+	Format     string               `yaml:"format,omitempty"`
+	Properties map[string]*Property `yaml:"properties,omitempty"`
+	Required   []string             `yaml:"required,omitempty"`
+	Nullable   bool                 `yaml:"nullable,omitempty"`
+	Items      *Property            `yaml:"items,omitempty"`
+	Example    string               `yaml:"example,omitempty"`
+	Ref        string               `yaml:"$ref,omitempty"` // Reference to another schema
 }
 
-func NewProperty(input utils.IInputMethods, propertyName string, parentProperty *Property, mode constants.InputMode) *Property {
+func NewProperty(input input.IInputMethods, propertyName string, parentProperty *Property, optionalProperties *Optionals, mode constants.InputMode) *Property {
 	return &Property{
-		Input:          input,
-		PropertyName:   propertyName,
-		ParentProperty: parentProperty,
-		Mode:           mode,
-		Type:           "",
-		Format:         "",
-		Properties:     make(map[string]*Property),
-		Required:       []string{},
-		Nullable:       false,
-		Items:          nil,
-		Example:        "",
+		Input:              input,
+		PropertyName:       propertyName,
+		ParentProperty:     parentProperty,
+		Mode:               mode,
+		OptionalProperties: optionalProperties,
+		Type:               "",
+		Format:             "",
+		Properties:         make(map[string]*Property),
+		Required:           []string{},
+		Nullable:           false,
+		Items:              nil,
+		Example:            "",
 	}
 }
 
 func (s *Property) readType() error {
-	err := s.Input.SelectInput(&s.Type, "Select Property Type", constants.FieldTypeList)
+	label := "Select Property Type (" + s.PropertyName + ")"
+	err := s.Input.SelectInput(&s.Type, label, constants.FieldTypeList)
 	if err != nil {
 		return err
 	}
@@ -49,17 +55,28 @@ func (s *Property) readType() error {
 }
 
 func (s *Property) readFormat() error {
-	err := s.Input.SelectInput(&s.Format, "Select Property Format", constants.FormatList[s.Type])
+	var format string
+
+	label := "Select Property Format (" + s.PropertyName + ")"
+	err := s.Input.SelectInput(&format, label, constants.FormatList[s.Type])
 	if err != nil {
 		return err
 	}
+
+	if format == constants.FORMAT_NONE {
+		return nil
+	}
+
+	s.Format = format
 
 	return nil
 }
 
 func (s *Property) readRequired() error {
 	isRequired := false
-	err := s.Input.BooleanInput(&isRequired, "Is this property required?")
+
+	label := "Is this property required? (" + s.PropertyName + ")"
+	err := s.Input.BooleanInput(&isRequired, label)
 	if err != nil {
 		return err
 	}
@@ -72,7 +89,8 @@ func (s *Property) readRequired() error {
 }
 
 func (s *Property) readNullable() error {
-	err := s.Input.BooleanInput(&s.Nullable, "Is this property nullable?")
+	label := "Is this property nullable? (" + s.PropertyName + ")"
+	err := s.Input.BooleanInput(&s.Nullable, label)
 	if err != nil {
 		return err
 	}
@@ -103,7 +121,7 @@ func (s *Property) readRef() error {
 func (s *Property) ReadProperty() error {
 	var propertyName string
 
-	var validate utils.ValidationFunc = func(input string) error {
+	var validate input.ValidationFunc = func(input string) error {
 		if input == "" {
 			return errors.New("[ERROR] property name cannot be empty")
 		}
@@ -120,7 +138,7 @@ func (s *Property) ReadProperty() error {
 		return err
 	}
 
-	property := NewProperty(s.Input, propertyName, s, s.Mode)
+	property := NewProperty(s.Input, propertyName, s, s.OptionalProperties, s.Mode)
 
 	if err := property.ReadAll(); err != nil {
 		return err
@@ -177,10 +195,26 @@ func (s *Property) readExample() error {
 	return nil
 }
 
+func (s *Property) readPropertyNames() error {
+	var propNames []string
+	if err := s.Input.MultipleStringInput(&propNames, "Enter property names", nil); err != nil {
+		return err
+	}
+
+	for _, name := range propNames {
+		s.Properties[name] = NewProperty(s.Input, name, s, s.OptionalProperties, s.Mode)
+	}
+
+	return nil
+}
+
 func (s *Property) ReadAll() error {
+	fmt.Println("isReadRef:", s.isReadRef())
 	if s.isReadRef() {
 		var useRef bool
-		if err := s.Input.BooleanInput(&useRef, "Do you want to reference another schema?"); err != nil {
+
+		label := "Do you want to reference another schema? (" + s.PropertyName + ")"
+		if err := s.Input.BooleanInput(&useRef, label); err != nil {
 			return err
 		}
 
@@ -196,14 +230,7 @@ func (s *Property) ReadAll() error {
 		return err
 	}
 
-	isUseFormat := false
 	if s.Type == constants.STRING_TYPE || s.Type == constants.NUMBER_TYPE || s.Type == constants.INTEGER_TYPE {
-		err := s.Input.BooleanInput(&isUseFormat, "Do you want to specify a format for this property?")
-		if err != nil {
-			return err
-		}
-	}
-	if isUseFormat {
 		if err := s.readFormat(); err != nil {
 			return err
 		}
@@ -221,31 +248,28 @@ func (s *Property) ReadAll() error {
 		}
 	}
 
-	if s.Type == constants.OBJECT_TYPE {
-		for {
-			if err := s.ReadProperty(); err != nil {
+	switch s.Type {
+	case constants.OBJECT_TYPE:
+		if err := s.readPropertyNames(); err != nil {
+			return err
+		}
+
+		if len(s.Properties) == 0 {
+			err := fmt.Sprintf("[ERROR] at least one property is required for object type (property: %s)", s.PropertyName)
+			return errors.New(err)
+		}
+		for _, prop := range s.Properties {
+			if err := prop.ReadAll(); err != nil {
 				return err
-			}
-
-			msg := fmt.Sprintf("Do you want to add another property? (%s)", s.PropertyName)
-
-			isAdd := false
-			err := s.Input.BooleanInput(&isAdd, msg)
-			if err != nil {
-				return err
-			}
-
-			if !isAdd {
-				break
 			}
 		}
-	} else if s.Type == constants.ARRAY_TYPE {
+	case constants.ARRAY_TYPE:
 		if err := s.ReadItem(); err != nil {
 			return err
 		}
 	}
 
-	if constants.IsExamplableType(s.Type) {
+	if constants.IsExamplableType(s.Type) && s.OptionalProperties.Contains("example") {
 		isAddExample := false
 		err := s.Input.BooleanInput(&isAddExample, "Do you want to add an example value for this property?")
 		if err != nil {
@@ -279,9 +303,11 @@ func (p *Property) isReadNullable() bool {
 }
 
 func (p *Property) isReadRef() bool {
-	if p.ParentProperty == nil {
-		return true
-	}
+	return p.Mode != constants.MODE_MODEL && p.ParentProperty != nil
+}
 
-	return p.Mode != constants.MODE_MODEL
+type Optionals []string
+
+func (o Optionals) Contains(prop string) bool {
+	return slices.Contains(o, prop)
 }

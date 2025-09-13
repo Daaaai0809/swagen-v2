@@ -25,9 +25,9 @@ Make sure your `GOBIN` is on your PATH so the `swagen-v2` command is available.
 
 Create a `.env` file at the root of the directory where you’ll use swagen-v2, based on `.env.example`.
 
-- `MODEL_PATH`: Directory where model schemas are generated.
-- `SCHEMA_PATH`: Directory where request/response schemas are generated.
-- `API_PATH`: Directory where path (API) schemas are generated.
+- `SWAGEN_MODEL_PATH`: Directory where model schemas are generated.
+- `SWAGEN_SCHEMA_PATH`: Directory where request/response schemas are generated.
+- `SWAGEN_API_PATH`: Directory where path (API) schemas are generated.
 
 All three variables are required. Missing any of them may cause the CLI to fail.
 

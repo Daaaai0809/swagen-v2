@@ -1,11 +1,11 @@
 package schema
 
 import (
-	"errors"
-
 	"github.com/Daaaai0809/swagen-v2/constants"
 	"github.com/Daaaai0809/swagen-v2/handler"
+	"github.com/Daaaai0809/swagen-v2/input"
 	"github.com/Daaaai0809/swagen-v2/utils"
+	"github.com/Daaaai0809/swagen-v2/validator"
 	"gopkg.in/yaml.v2"
 )
 
@@ -13,29 +13,36 @@ type SchemaName string
 
 type Schema struct {
 	*handler.Property
-	Input utils.IInputMethods
+	Input     input.IInputMethods
+	Validator validator.IInputValidator
 }
 
-func NewSchema(input utils.IInputMethods) Schema {
+func NewSchema(input input.IInputMethods, validator validator.IInputValidator) Schema {
 	return Schema{
-		Input:    input,
-		Property: handler.NewProperty(input, "", nil, constants.MODE_SCHEMA),
+		Input:     input,
+		Validator: validator,
+		Property:  handler.NewProperty(input, "", nil, &handler.Optionals{}, constants.MODE_SCHEMA),
 	}
+}
+
+func (s Schema) InputPropertyNames() error {
+	for {
+		var propName string
+		if err := s.Input.StringInput(&propName, "Enter a property name", s.Validator.Validator_Alphanumeric_Underscore()); err != nil {
+			return err
+		}
+		if propName == "" {
+			break
+		}
+
+		s.Properties[propName] = handler.NewProperty(s.Input, propName, s.Property, s.OptionalProperties, constants.MODE_SCHEMA)
+	}
+
+	return nil
 }
 
 func (s Schema) InputSchemaName(name *SchemaName) error {
-	var validate utils.ValidationFunc = func(input string) error {
-		if input == "" {
-			return errors.New("[ERROR] schema name cannot be empty")
-		}
-		if len(input) > 100 {
-			return errors.New("[ERROR] schema name cannot exceed 100 characters")
-		}
-
-		return nil
-	}
-
-	err := s.Input.StringInput((*string)(name), "Schema Name", &validate)
+	err := s.Input.StringInput((*string)(name), "Schema Name", s.Validator.Validator_Alphanumeric_Underscore())
 	if err != nil {
 		return err
 	}

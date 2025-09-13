@@ -5,7 +5,8 @@ package cmd
 
 import (
 	"github.com/Daaaai0809/swagen-v2/handler/model"
-	"github.com/Daaaai0809/swagen-v2/utils"
+	"github.com/Daaaai0809/swagen-v2/input"
+	"github.com/Daaaai0809/swagen-v2/validator"
 	"github.com/spf13/cobra"
 )
 
@@ -14,8 +15,7 @@ var modelCmd = &cobra.Command{
 	Use:   "model",
 	Short: "Generate model schema",
 	Run: func(cmd *cobra.Command, args []string) {
-		input := utils.NewInputMethods()
-		modelHandler := model.NewModelHandler(input)
+		modelHandler := model.NewModelHandler(input.NewInputMethods(), validator.NewInputValidator())
 		if err := modelHandler.HandleGenerateModelCommand(); err != nil {
 			cmd.PrintErrf("[ERROR] Generating model schema: %v\n", err)
 			return
