@@ -18,7 +18,7 @@ If you keep editing the code, just run `make build-binary` again to refresh the 
 	```bash
 	cp .env.example .env
 	```
-	Adjust `MODEL_PATH`, `SCHEMA_PATH`, and `API_PATH` as needed.
+	Adjust `SWAGEN_MODEL_PATH`, `SWAGEN_SCHEMA_PATH`, and `SWAGEN_API_PATH` as needed.
 3. Go back to the repository root (if you are not already there) and build the binary:
 	```bash
 	go build -o ./example/swagen-v2.local

@@ -128,7 +128,7 @@ func (ah *APIHandler) HandleGenerateAPICommand() error {
 		}
 	}
 
-	if err := api.GenerateFile(fileName, constants.HTTPMethodsMap[method], utils.GetEnv(utils.API_PATH, "path/")); err != nil {
+	if err := api.GenerateFile(fileName, constants.HTTPMethodsMap[method], utils.GetEnv(utils.SWAGEN_API_PATH, "path/")); err != nil {
 		return err
 	}
 

@@ -63,7 +63,7 @@ func (sh *SchemaHandler) HandleGenerateSchemaCommand() error {
 		}
 	}
 
-	if err := schema.GenerateSchema(fileName, schemaName, utils.GetEnv(utils.SCHEMA_PATH, "schema/")); err != nil {
+	if err := schema.GenerateSchema(fileName, schemaName, utils.GetEnv(utils.SWAGEN_SCHEMA_PATH, "schema/")); err != nil {
 		return err
 	}
 
