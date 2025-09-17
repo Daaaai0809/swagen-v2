@@ -361,7 +361,7 @@ func (im *InputMethods) MultipleSelectInput(result *[]string, label string, item
 		clearScreen()
 		fmt.Println(labelStyle(fmt.Sprintf("%s (↑/↓: Move Space: Select Enter: Confirm / ESC: Cancel)", label)))
 		if query != "" {
-			fmt.Println(faintStyle("検索:") + " " + query)
+			fmt.Println(faintStyle("Search:") + " " + query)
 		}
 		for i, e := range listing {
 			cur := (i == cursor)
