@@ -26,16 +26,14 @@ func NewSchema(input input.IInputMethods, validator validator.IInputValidator) S
 }
 
 func (s Schema) InputPropertyNames() error {
-	for {
-		var propName string
-		if err := s.Input.StringInput(&propName, "Enter a property name", s.Validator.Validator_Alphanumeric_Underscore()); err != nil {
-			return err
-		}
-		if propName == "" {
-			break
-		}
+	var propertyNames []string
+	if err := s.Input.MultipleStringInput(&propertyNames, "Enter property names", m.Validator.Validator_Alphanumeric_Underscore_Allow_Empty()); err != nil {
+		return err
+	}
 
-		s.Properties[propName] = handler.NewProperty(s.Input, propName, s.Property, s.OptionalProperties, constants.MODE_SCHEMA)
+	for _, name := range propertyNames {
+		property := handler.NewProperty(s.Input, name, nil, &handler.Optionals{}, constants.MODE_SCHEMA)
+		s.Properties[name] = property
 	}
 
 	return nil
