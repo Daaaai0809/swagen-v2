@@ -27,7 +27,7 @@ func NewSchema(input input.IInputMethods, validator validator.IInputValidator) S
 
 func (s Schema) InputPropertyNames() error {
 	var propertyNames []string
-	if err := s.Input.MultipleStringInput(&propertyNames, "Enter property names", m.Validator.Validator_Alphanumeric_Underscore_Allow_Empty()); err != nil {
+	if err := s.Input.MultipleStringInput(&propertyNames, "Enter property names", s.Validator.Validator_Alphanumeric_Underscore_Allow_Empty()); err != nil {
 		return err
 	}
 
