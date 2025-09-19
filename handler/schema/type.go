@@ -32,7 +32,7 @@ func (s Schema) InputPropertyNames() error {
 	}
 
 	for _, name := range propertyNames {
-		property := handler.NewProperty(s.Input, name, nil, &handler.Optionals{}, constants.MODE_SCHEMA)
+		property := handler.NewProperty(s.Input, name, s.Property, &handler.Optionals{}, constants.MODE_SCHEMA)
 		s.Properties[name] = property
 	}
 
