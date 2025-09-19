@@ -303,6 +303,10 @@ func (p *Property) isReadNullable() bool {
 }
 
 func (p *Property) isReadRef() bool {
+	if p.Mode == constants.MODE_API {
+		return true
+	}
+
 	return p.Mode != constants.MODE_MODEL && p.ParentProperty != nil
 }
 
