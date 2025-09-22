@@ -6,8 +6,8 @@ import (
 	"slices"
 
 	"github.com/Daaaai0809/swagen-v2/constants"
+	"github.com/Daaaai0809/swagen-v2/fetcher"
 	"github.com/Daaaai0809/swagen-v2/input"
-	"github.com/Daaaai0809/swagen-v2/utils"
 )
 
 type Property struct {
@@ -99,7 +99,7 @@ func (s *Property) readNullable() error {
 }
 
 func (s *Property) readRef() error {
-	ref, err := utils.InteractiveResolveRef(s.Input, s.Mode)
+	ref, err := fetcher.InteractiveResolveRef(s.Input, s.Mode)
 	if err != nil {
 		return err
 	}

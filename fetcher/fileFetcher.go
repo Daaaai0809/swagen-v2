@@ -1,4 +1,4 @@
-package utils
+package fetcher
 
 import (
 	"errors"
@@ -10,6 +10,7 @@ import (
 
 	"github.com/Daaaai0809/swagen-v2/constants"
 	"github.com/Daaaai0809/swagen-v2/input"
+	"github.com/Daaaai0809/swagen-v2/utils"
 	"gopkg.in/yaml.v2"
 )
 
@@ -29,9 +30,9 @@ func InteractiveResolveRef(input input.IInputMethods, mode constants.InputMode) 
 		return "", err
 	}
 
-	destBase := GetEnv(SWAGEN_SCHEMA_PATH, "")
+	destBase := utils.GetEnv(utils.SWAGEN_SCHEMA_PATH, "")
 	if mode == constants.MODE_API {
-		destBase = GetEnv(SWAGEN_API_PATH, "")
+		destBase = utils.GetEnv(utils.SWAGEN_API_PATH, "")
 	}
 	if destBase == "" {
 		destBase = "."
@@ -46,7 +47,7 @@ func InteractiveResolveRef(input input.IInputMethods, mode constants.InputMode) 
 	// If startPath came from SWAGEN_SCHEMA_PATH, treat file as schema-kind even in API mode
 	if fileKind == "auto" {
 		// infer by extension only (already .yaml) and location
-		if strings.HasPrefix(filepath.Clean(selectedFile), filepath.Clean(GetEnv(SWAGEN_SCHEMA_PATH, ""))) {
+		if strings.HasPrefix(filepath.Clean(selectedFile), filepath.Clean(utils.GetEnv(utils.SWAGEN_SCHEMA_PATH, ""))) {
 			fileKind = "schema"
 		} else {
 			fileKind = "model"
@@ -93,7 +94,7 @@ func InteractiveResolveRef(input input.IInputMethods, mode constants.InputMode) 
 func decideStartPath(input input.IInputMethods, mode constants.InputMode) (string, string, error) {
 	switch mode {
 	case constants.MODE_SCHEMA:
-		p := GetEnv(SWAGEN_MODEL_PATH, "")
+		p := utils.GetEnv(utils.SWAGEN_MODEL_PATH, "")
 		if p == "" {
 			return "", "", errors.New("[ERROR] SWAGEN_MODEL_PATH is not set. Set it in environment or .env")
 		}
@@ -105,13 +106,13 @@ func decideStartPath(input input.IInputMethods, mode constants.InputMode) (strin
 		}
 		switch choice {
 		case "SWAGEN_MODEL_PATH":
-			p := GetEnv(SWAGEN_MODEL_PATH, "")
+			p := utils.GetEnv(utils.SWAGEN_MODEL_PATH, "")
 			if p == "" {
 				return "", "", errors.New("[ERROR] SWAGEN_MODEL_PATH is not set. Set it in environment or .env")
 			}
 			return p, "model", nil
 		case "SWAGEN_SCHEMA_PATH":
-			p := GetEnv(SWAGEN_SCHEMA_PATH, "")
+			p := utils.GetEnv(utils.SWAGEN_SCHEMA_PATH, "")
 			if p == "" {
 				return "", "", errors.New("[ERROR] SWAGEN_SCHEMA_PATH is not set. Set it in environment or .env")
 			}

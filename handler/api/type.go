@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/Daaaai0809/swagen-v2/constants"
+	"github.com/Daaaai0809/swagen-v2/fetcher"
 	"github.com/Daaaai0809/swagen-v2/handler"
 	"github.com/Daaaai0809/swagen-v2/input"
 	"github.com/Daaaai0809/swagen-v2/utils"
@@ -250,7 +251,7 @@ func (ps *ParamSchema) ReadMin() error {
 }
 
 func (ps *ParamSchema) ReadRef() error {
-	ref, err := utils.InteractiveResolveRef(ps.Input, constants.MODE_API)
+	ref, err := fetcher.InteractiveResolveRef(ps.Input, constants.MODE_API)
 	if err != nil {
 		return err
 	}
