@@ -15,6 +15,7 @@ type API struct {
 	APIValidator       validator.IInputValidator `yaml:"-"`
 	OptionalProperties handler.Optionals         `yaml:"-"`
 	ParameterNames     []string                  `yaml:"-"`
+	FileFetcher        fetcher.IFileFetcher      `yaml:"-"`
 
 	OperationID string               `yaml:"operationId,omitempty"`
 	Summary     string               `yaml:"summary,omitempty"`
@@ -25,10 +26,11 @@ type API struct {
 	Responses   map[string]*Response `yaml:"responses,omitempty"`
 }
 
-func NewAPI(input input.IInputMethods, validator validator.IInputValidator) *API {
+func NewAPI(input input.IInputMethods, validator validator.IInputValidator, fileFetcher fetcher.IFileFetcher) *API {
 	return &API{
 		Input:        input,
 		APIValidator: validator,
+		FileFetcher:  fileFetcher,
 		Parameters:   []*Parameter{},
 		RequestBody:  nil,
 		Responses:    make(map[string]*Response),
@@ -56,7 +58,7 @@ func (a *API) InputHTTPStatusCodes(method string) error {
 	}
 
 	for _, code := range statusCodes {
-		a.Responses[code] = NewResponse(a.Input, code, a.OptionalProperties)
+		a.Responses[code] = NewResponse(a.Input, code, a.OptionalProperties, a.FileFetcher)
 	}
 
 	return nil
@@ -115,7 +117,7 @@ func (a *API) ReadTags() error {
 }
 
 func (a *API) ReadRequestBody() error {
-	reqBody := NewRequestBody(a.Input, a.OptionalProperties)
+	reqBody := NewRequestBody(a.Input, a.OptionalProperties, a.FileFetcher)
 
 	if err := reqBody.ReadAll(); err != nil {
 		return err
@@ -148,11 +150,11 @@ type Parameter struct {
 	Schema *ParamSchema `yaml:"schema,omitempty"`
 }
 
-func NewParameter(input input.IInputMethods, name string) *Parameter {
+func NewParameter(input input.IInputMethods, name string, fileFetcher fetcher.IFileFetcher) *Parameter {
 	return &Parameter{
 		Input:  input,
 		Name:   name,
-		Schema: NewParamSchema(input),
+		Schema: NewParamSchema(input, fileFetcher),
 	}
 }
 
@@ -179,8 +181,9 @@ func (p *Parameter) ReadAll() error {
 }
 
 type ParamSchema struct {
-	Input              input.IInputMethods `yaml:"-"`
-	OptionalProperties handler.Optionals   `yaml:"-"`
+	Input              input.IInputMethods  `yaml:"-"`
+	OptionalProperties handler.Optionals    `yaml:"-"`
+	FileFetcher        fetcher.IFileFetcher `yaml:"-"`
 
 	Type    string `yaml:"type,omitempty"`
 	Format  string `yaml:"format,omitempty"`
@@ -190,9 +193,10 @@ type ParamSchema struct {
 	Ref     string `yaml:"$ref,omitempty"`
 }
 
-func NewParamSchema(input input.IInputMethods) *ParamSchema {
+func NewParamSchema(input input.IInputMethods, fileFetcher fetcher.IFileFetcher) *ParamSchema {
 	return &ParamSchema{
-		Input: input,
+		Input:       input,
+		FileFetcher: fileFetcher,
 	}
 }
 
@@ -251,7 +255,7 @@ func (ps *ParamSchema) ReadMin() error {
 }
 
 func (ps *ParamSchema) ReadRef() error {
-	ref, err := fetcher.InteractiveResolveRef(ps.Input, constants.MODE_API)
+	ref, err := ps.FileFetcher.InteractiveResolveRef(ps.Input, constants.MODE_API)
 	if err != nil {
 		return err
 	}
@@ -305,19 +309,21 @@ func (ps *ParamSchema) ReadAll() error {
 }
 
 type RequestBody struct {
-	Input              input.IInputMethods `yaml:"-"`
-	OptionalProperties handler.Optionals   `yaml:"-"`
+	Input              input.IInputMethods  `yaml:"-"`
+	OptionalProperties handler.Optionals    `yaml:"-"`
+	FileFetcher        fetcher.IFileFetcher `yaml:"-"`
 
 	Description string                `yaml:"description,omitempty"`
 	Required    bool                  `yaml:"required,omitempty"`
 	Content     map[string]*MediaType `yaml:"content,omitempty"`
 }
 
-func NewRequestBody(input input.IInputMethods, optionalProperties handler.Optionals) *RequestBody {
+func NewRequestBody(input input.IInputMethods, optionalProperties handler.Optionals, fileFetcher fetcher.IFileFetcher) *RequestBody {
 	return &RequestBody{
 		Input:              input,
 		OptionalProperties: optionalProperties,
 		Content:            make(map[string]*MediaType),
+		FileFetcher:        fileFetcher,
 	}
 }
 
@@ -330,7 +336,7 @@ func (rq *RequestBody) InputMediaTypes() error {
 
 	for _, mt := range mediaTypes {
 		mimeType := constants.MediaTypeMap[mt]
-		rq.Content[mimeType] = NewMediaType(rq.Input, rq.OptionalProperties)
+		rq.Content[mimeType] = NewMediaType(rq.Input, rq.OptionalProperties, rq.FileFetcher)
 	}
 
 	return nil
@@ -382,10 +388,10 @@ type MediaType struct {
 	// Example string `yaml:"example,omitempty"`
 }
 
-func NewMediaType(input input.IInputMethods, optionalProperties handler.Optionals) *MediaType {
+func NewMediaType(input input.IInputMethods, optionalProperties handler.Optionals, fileFetcher fetcher.IFileFetcher) *MediaType {
 	return &MediaType{
 		Input:  input,
-		Schema: handler.NewProperty(input, "schema", nil, &optionalProperties, constants.MODE_API),
+		Schema: handler.NewProperty(input, "schema", nil, &optionalProperties, constants.MODE_API, fileFetcher),
 	}
 }
 
@@ -398,20 +404,22 @@ func (mt *MediaType) ReadAll() error {
 }
 
 type Response struct {
-	Input              input.IInputMethods `yaml:"-"`
-	Code               string              `yaml:"-"`
-	OptionalProperties handler.Optionals   `yaml:"-"`
+	Input              input.IInputMethods  `yaml:"-"`
+	Code               string               `yaml:"-"`
+	OptionalProperties handler.Optionals    `yaml:"-"`
+	FileFetcher        fetcher.IFileFetcher `yaml:"-"`
 
 	Description string                `yaml:"description,omitempty"`
 	Content     map[string]*MediaType `yaml:"content,omitempty"`
 }
 
-func NewResponse(input input.IInputMethods, code string, optionalProperties handler.Optionals) *Response {
+func NewResponse(input input.IInputMethods, code string, optionalProperties handler.Optionals, fileFetcher fetcher.IFileFetcher) *Response {
 	return &Response{
 		Input:              input,
 		Code:               code,
 		OptionalProperties: optionalProperties,
 		Content:            make(map[string]*MediaType),
+		FileFetcher:        fileFetcher,
 	}
 }
 
@@ -424,7 +432,7 @@ func (r *Response) InputMediaTypes() error {
 
 	for _, mt := range mediaTypes {
 		mimeType := constants.MediaTypeMap[mt]
-		r.Content[mimeType] = NewMediaType(r.Input, r.OptionalProperties)
+		r.Content[mimeType] = NewMediaType(r.Input, r.OptionalProperties, r.FileFetcher)
 	}
 
 	return nil

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/Daaaai0809/swagen-v2/fetcher"
 	"github.com/Daaaai0809/swagen-v2/handler/api"
 	"github.com/Daaaai0809/swagen-v2/input"
 	"github.com/Daaaai0809/swagen-v2/validator"
@@ -12,7 +13,7 @@ var apiCmd = &cobra.Command{
 	Short: "Generate an Path file",
 	Long:  `Interactively generate an API file for your endpoints.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		apiHandler := api.NewAPIHandler(input.NewInputMethods(), validator.NewInputValidator())
+		apiHandler := api.NewAPIHandler(input.NewInputMethods(), validator.NewInputValidator(), fetcher.NewFileFetcher())
 		if err := apiHandler.HandleGenerateAPICommand(); err != nil {
 			cmd.PrintErrf("[ERROR] Generating API: %v\n", err)
 			return err

@@ -2,6 +2,7 @@ package schema
 
 import (
 	"github.com/Daaaai0809/swagen-v2/constants"
+	"github.com/Daaaai0809/swagen-v2/fetcher"
 	"github.com/Daaaai0809/swagen-v2/handler"
 	"github.com/Daaaai0809/swagen-v2/input"
 	"github.com/Daaaai0809/swagen-v2/utils"
@@ -13,15 +14,17 @@ type SchemaName string
 
 type Schema struct {
 	*handler.Property
-	Input     input.IInputMethods
-	Validator validator.IInputValidator
+	Input       input.IInputMethods
+	Validator   validator.IInputValidator
+	FileFetcher fetcher.IFileFetcher
 }
 
-func NewSchema(input input.IInputMethods, validator validator.IInputValidator) Schema {
+func NewSchema(input input.IInputMethods, validator validator.IInputValidator, fileFetcher fetcher.IFileFetcher) Schema {
 	return Schema{
-		Input:     input,
-		Validator: validator,
-		Property:  handler.NewProperty(input, "", nil, &handler.Optionals{}, constants.MODE_SCHEMA),
+		Input:       input,
+		Validator:   validator,
+		Property:    handler.NewProperty(input, "", nil, &handler.Optionals{}, constants.MODE_SCHEMA, fileFetcher),
+		FileFetcher: fileFetcher,
 	}
 }
 
@@ -32,7 +35,7 @@ func (s Schema) InputPropertyNames() error {
 	}
 
 	for _, name := range propertyNames {
-		property := handler.NewProperty(s.Input, name, s.Property, &handler.Optionals{}, constants.MODE_SCHEMA)
+		property := handler.NewProperty(s.Input, name, s.Property, &handler.Optionals{}, constants.MODE_SCHEMA, s.FileFetcher)
 		s.Properties[name] = property
 	}
 

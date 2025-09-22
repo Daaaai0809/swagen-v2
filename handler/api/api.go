@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/Daaaai0809/swagen-v2/constants"
+	"github.com/Daaaai0809/swagen-v2/fetcher"
 	"github.com/Daaaai0809/swagen-v2/input"
 	"github.com/Daaaai0809/swagen-v2/utils"
 	"github.com/Daaaai0809/swagen-v2/validator"
@@ -10,12 +11,14 @@ import (
 type APIHandler struct {
 	Input        input.IInputMethods
 	APIValidator validator.IInputValidator
+	FileFetcher  fetcher.IFileFetcher
 }
 
-func NewAPIHandler(input input.IInputMethods, validator validator.IInputValidator) *APIHandler {
+func NewAPIHandler(input input.IInputMethods, validator validator.IInputValidator, fileFetcher fetcher.IFileFetcher) *APIHandler {
 	return &APIHandler{
 		Input:        input,
 		APIValidator: validator,
+		FileFetcher:  fileFetcher,
 	}
 }
 
@@ -25,7 +28,7 @@ func (ah *APIHandler) HandleGenerateAPICommand() error {
 		return err
 	}
 
-	api := NewAPI(ah.Input, ah.APIValidator)
+	api := NewAPI(ah.Input, ah.APIValidator, ah.FileFetcher)
 
 	var method string
 	if err := ah.Input.SelectInput(&method, "Select the HTTP method for the API", constants.HTTPMethods); err != nil {
@@ -66,7 +69,7 @@ func (ah *APIHandler) HandleGenerateAPICommand() error {
 		}
 
 		for _, name := range api.ParameterNames {
-			param := NewParameter(api.Input, name)
+			param := NewParameter(api.Input, name, api.FileFetcher)
 			api.Parameters = append(api.Parameters, param)
 			if err := param.ReadAll(); err != nil {
 				return err

@@ -1,20 +1,23 @@
 package schema
 
 import (
+	"github.com/Daaaai0809/swagen-v2/fetcher"
 	"github.com/Daaaai0809/swagen-v2/input"
 	"github.com/Daaaai0809/swagen-v2/utils"
 	"github.com/Daaaai0809/swagen-v2/validator"
 )
 
 type SchemaHandler struct {
-	Input     input.IInputMethods
-	Validator validator.IInputValidator
+	Input       input.IInputMethods
+	Validator   validator.IInputValidator
+	FileFetcher fetcher.IFileFetcher
 }
 
-func NewSchemaHandler(input input.IInputMethods, validator validator.IInputValidator) *SchemaHandler {
+func NewSchemaHandler(input input.IInputMethods, validator validator.IInputValidator, fileFetcher fetcher.IFileFetcher) *SchemaHandler {
 	return &SchemaHandler{
-		Input:     input,
-		Validator: validator,
+		Input:       input,
+		Validator:   validator,
+		FileFetcher: fileFetcher,
 	}
 }
 
@@ -24,7 +27,7 @@ func (sh *SchemaHandler) HandleGenerateSchemaCommand() error {
 		return err
 	}
 
-	schema := NewSchema(sh.Input, sh.Validator)
+	schema := NewSchema(sh.Input, sh.Validator, sh.FileFetcher)
 
 	schema.Type = "object"
 

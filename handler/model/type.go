@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/Daaaai0809/swagen-v2/constants"
+	"github.com/Daaaai0809/swagen-v2/fetcher"
 	"github.com/Daaaai0809/swagen-v2/handler"
 	"github.com/Daaaai0809/swagen-v2/input"
 	"github.com/Daaaai0809/swagen-v2/utils"
@@ -10,8 +11,9 @@ import (
 )
 
 type Model struct {
-	Input     input.IInputMethods       `yaml:"-"`
-	Validator validator.IInputValidator `yaml:"-"`
+	Input       input.IInputMethods       `yaml:"-"`
+	Validator   validator.IInputValidator `yaml:"-"`
+	FileFetcher fetcher.IFileFetcher      `yaml:"-"`
 
 	Title      string                       `yaml:"title,omitempty"`
 	Type       string                       `yaml:"type"`
@@ -44,7 +46,7 @@ func (m *Model) ReadPropertyNames() error {
 	}
 
 	for _, name := range propertyNames {
-		property := handler.NewProperty(m.Input, name, nil, &handler.Optionals{}, constants.MODE_MODEL)
+		property := handler.NewProperty(m.Input, name, nil, &handler.Optionals{}, constants.MODE_MODEL, m.FileFetcher)
 		m.Properties[name] = property
 	}
 

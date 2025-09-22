@@ -11,11 +11,12 @@ import (
 )
 
 type Property struct {
-	Input              input.IInputMethods `yaml:"-"`
-	PropertyName       string              `yaml:"-"`
-	ParentProperty     *Property           `yaml:"-"` // Optional parent schema for nested properties
-	Mode               constants.InputMode `yaml:"-"` // Mode of the schema (MODEL, SCHEMA, API)
-	OptionalProperties *Optionals          `yaml:"-"`
+	Input              input.IInputMethods  `yaml:"-"`
+	PropertyName       string               `yaml:"-"`
+	ParentProperty     *Property            `yaml:"-"` // Optional parent schema for nested properties
+	Mode               constants.InputMode  `yaml:"-"` // Mode of the schema (MODEL, SCHEMA, API)
+	OptionalProperties *Optionals           `yaml:"-"`
+	FileFetcher        fetcher.IFileFetcher `yaml:"-"`
 
 	Type       string               `yaml:"type,omitempty"`
 	Format     string               `yaml:"format,omitempty"`
@@ -27,12 +28,13 @@ type Property struct {
 	Ref        string               `yaml:"$ref,omitempty"` // Reference to another schema
 }
 
-func NewProperty(input input.IInputMethods, propertyName string, parentProperty *Property, optionalProperties *Optionals, mode constants.InputMode) *Property {
+func NewProperty(input input.IInputMethods, propertyName string, parentProperty *Property, optionalProperties *Optionals, mode constants.InputMode, fileFetcher fetcher.IFileFetcher) *Property {
 	return &Property{
 		Input:              input,
 		PropertyName:       propertyName,
 		ParentProperty:     parentProperty,
 		Mode:               mode,
+		FileFetcher:        fileFetcher,
 		OptionalProperties: optionalProperties,
 		Type:               "",
 		Format:             "",
@@ -99,7 +101,7 @@ func (s *Property) readNullable() error {
 }
 
 func (s *Property) readRef() error {
-	ref, err := fetcher.InteractiveResolveRef(s.Input, s.Mode)
+	ref, err := s.FileFetcher.InteractiveResolveRef(s.Input, s.Mode)
 	if err != nil {
 		return err
 	}
@@ -138,7 +140,7 @@ func (s *Property) ReadProperty() error {
 		return err
 	}
 
-	property := NewProperty(s.Input, propertyName, s, s.OptionalProperties, s.Mode)
+	property := NewProperty(s.Input, propertyName, s, s.OptionalProperties, s.Mode, s.FileFetcher)
 
 	if err := property.ReadAll(); err != nil {
 		return err
@@ -202,7 +204,7 @@ func (s *Property) readPropertyNames() error {
 	}
 
 	for _, name := range propNames {
-		s.Properties[name] = NewProperty(s.Input, name, s, s.OptionalProperties, s.Mode)
+		s.Properties[name] = NewProperty(s.Input, name, s, s.OptionalProperties, s.Mode, s.FileFetcher)
 	}
 
 	return nil
