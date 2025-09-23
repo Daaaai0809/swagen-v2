@@ -23,6 +23,7 @@ const (
 	JSON_POINTER_REF = "#"
 	TILDE_ESCAPE     = "~0"
 	SLASH_ESCAPE     = "~1"
+	NEW_DIR          = "Create new directory"
 )
 
 // IBaseFetcher defines common operations for file and directory fetching
