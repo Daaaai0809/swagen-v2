@@ -28,6 +28,7 @@ const (
 	WHICH_BASE_PATH_MSG     = "Which base path to reference?"
 	MODEL                   = "MODEL"
 	SCHEMA                  = "SCHEMA"
+	BACK_TO_SELECT_FILE     = "Back to file selection"
 )
 
 type IFileFetcher interface {
@@ -62,55 +63,75 @@ func (ff *FileFetcher) InteractiveResolveRef(input input.IInputMethods, mode con
 		return "", err
 	}
 
-	// Directory traversal to pick a YAML file
-	selectedFile, err := ff.selectFileInteractive(input, startPath)
-	if err != nil {
-		return "", err
-	}
+	var selectedFile string
+	var lastDirectory string
 
-	// If startPath came from SWAGEN_SCHEMA_PATH, treat file as schema-kind even in API mode
-	if fileKind == "auto" {
-		// infer by extension only (already .yaml) and location
-		if strings.HasPrefix(filepath.Clean(selectedFile), filepath.Clean(utils.GetEnv(utils.SWAGEN_SCHEMA_PATH, ""))) {
-			fileKind = "schema"
+	for {
+		// Directory traversal to pick a YAML file
+		if selectedFile == "" {
+			selectedFile, err = ff.selectFileInteractive(input, startPath)
 		} else {
-			fileKind = "model"
+			// Return to the last directory where the file was selected
+			selectedFile, err = ff.selectFileInteractive(input, lastDirectory)
 		}
-	}
+		if err != nil {
+			return "", err
+		}
 
-	// Parse YAML and select a field to build JSON Pointer
-	var pointer string
-	switch fileKind {
-	case "model":
-		pointer, err = ff.selectFieldFromModelFile(input, selectedFile)
-	case "schema":
-		pointer, err = ff.selectFieldFromSchemaFile(input, selectedFile)
-	default:
-		err = errors.New("unknown file kind")
-	}
-	if err != nil {
-		return "", err
-	}
+		// Remember the directory of the selected file for potential back navigation
+		lastDirectory = filepath.Dir(selectedFile)
 
-	// Build relative path
-	rel, err := filepath.Rel(destBase, selectedFile)
-	if err != nil {
-		return "", fmt.Errorf("[ERROR] relative path resolution failed")
-	}
-	rel = filepath.ToSlash(rel)
-	if !strings.HasSuffix(rel, YAML_EXT) && !strings.HasSuffix(rel, YML_EXT) {
-		// safety: ensure extension
-		rel += YAML_EXT
-	}
+		// If startPath came from SWAGEN_SCHEMA_PATH, treat file as schema-kind even in API mode
+		if fileKind == "auto" {
+			// infer by extension only (already .yaml) and location
+			if strings.HasPrefix(filepath.Clean(selectedFile), filepath.Clean(utils.GetEnv(utils.SWAGEN_SCHEMA_PATH, ""))) {
+				fileKind = "schema"
+			} else {
+				fileKind = "model"
+			}
+		}
 
-	// Ensure pointer starts with '#'
-	if pointer == "" {
-		pointer = JSON_POINTER_REF
-	} else if !strings.HasPrefix(pointer, JSON_POINTER_REF) {
-		pointer = JSON_POINTER_REF + pointer
-	}
+		// Parse YAML and select a field to build JSON Pointer
+		var pointer string
+		var backToFileSelection bool
+		switch fileKind {
+		case "model":
+			pointer, backToFileSelection, err = ff.selectFieldFromModelFileWithBack(input, selectedFile)
+		case "schema":
+			pointer, backToFileSelection, err = ff.selectFieldFromSchemaFileWithBack(input, selectedFile)
+		default:
+			err = errors.New("unknown file kind")
+		}
+		if err != nil {
+			return "", err
+		}
 
-	return fmt.Sprintf("%s%s", rel, pointer), nil
+		// Check if user wants to go back to file selection
+		if backToFileSelection {
+			selectedFile = "" // Reset to trigger file selection from lastDirectory
+			continue
+		}
+
+		// Build relative path
+		rel, err := filepath.Rel(destBase, selectedFile)
+		if err != nil {
+			return "", fmt.Errorf("[ERROR] relative path resolution failed")
+		}
+		rel = filepath.ToSlash(rel)
+		if !strings.HasSuffix(rel, YAML_EXT) && !strings.HasSuffix(rel, YML_EXT) {
+			// safety: ensure extension
+			rel += YAML_EXT
+		}
+
+		// Ensure pointer starts with '#'
+		if pointer == "" {
+			pointer = JSON_POINTER_REF
+		} else if !strings.HasPrefix(pointer, JSON_POINTER_REF) {
+			pointer = JSON_POINTER_REF + pointer
+		}
+
+		return fmt.Sprintf("%s%s", rel, pointer), nil
+	}
 }
 
 // decideStartPath asks for start directory based on mode and returns also the fileKind hint
@@ -216,19 +237,19 @@ type modelLite struct {
 	Properties map[string]*propertyLite `yaml:"properties,omitempty"`
 }
 
-func (ff *FileFetcher) selectFieldFromModelFile(input input.IInputMethods, file string) (string, error) {
+func (ff *FileFetcher) selectFieldFromModelFileWithBack(input input.IInputMethods, file string) (string, bool, error) {
 	b, err := os.ReadFile(file)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 
 	var m modelLite
 	if err := yaml.Unmarshal(b, &m); err != nil {
-		return "", fmt.Errorf("[ERROR] failed to parse YAML: %s", file)
+		return "", false, fmt.Errorf("[ERROR] failed to parse YAML: %s", file)
 	}
 
 	if len(m.Properties) == 0 {
-		return "", fmt.Errorf("[ERROR] no properties found in model: %s", file)
+		return "", false, fmt.Errorf("[ERROR] no properties found in model: %s", file)
 	}
 
 	// interactive walk over properties
@@ -237,10 +258,21 @@ func (ff *FileFetcher) selectFieldFromModelFile(input input.IInputMethods, file 
 
 	for {
 		keys := ff.sortedKeys(current)
+		// Add "back to select file" option at the beginning
+		options := make([]string, 0, len(keys)+1)
+		options = append(options, BACK_TO_SELECT_FILE)
+		options = append(options, keys...)
+
 		var sel string
-		if err := input.SelectInput(&sel, SELECT_PROPERTY_MSG, keys); err != nil {
-			return "", err
+		if err := input.SelectInput(&sel, SELECT_PROPERTY_MSG, options); err != nil {
+			return "", false, err
 		}
+
+		// Check if user wants to go back to file selection
+		if sel == BACK_TO_SELECT_FILE {
+			return "", true, nil
+		}
+
 		pointer = pointer + "/" + ff.baseFetcher.EscapeJsonPointerToken(sel)
 		prop := current[sel]
 
@@ -250,20 +282,20 @@ func (ff *FileFetcher) selectFieldFromModelFile(input input.IInputMethods, file 
 			// Ask continue or use here
 			var goDeeper string
 			if err := input.SelectInput(&goDeeper, CONTINUE_INTO_SUB_PROPS, []string{YES_OPTION, USE_THIS_FIELD}); err != nil {
-				return "", err
+				return "", false, err
 			}
 			if goDeeper == YES_OPTION {
 				current = prop.Properties
 				pointer = pointer + PROPERTIES_PATH
 				continue
 			}
-			return pointer, nil
+			return pointer, false, nil
 		}
 		// If array with items
 		if prop != nil && prop.Type == constants.ARRAY_TYPE && prop.Items != nil {
 			var goItems string
 			if err := input.SelectInput(&goItems, ARRAY_ITEMS_OR_USE, []string{ITEMS_OPTION, USE_THIS_FIELD}); err != nil {
-				return "", err
+				return "", false, err
 			}
 			if goItems == ITEMS_OPTION {
 				pointer = pointer + ITEMS_PATH
@@ -274,42 +306,50 @@ func (ff *FileFetcher) selectFieldFromModelFile(input input.IInputMethods, file 
 					continue
 				}
 				// items is primitive or non-object
-				return pointer, nil
+				return pointer, false, nil
 			}
-			return pointer, nil
+			return pointer, false, nil
 		}
 		// primitive or no deeper structure
-		return pointer, nil
+		return pointer, false, nil
 	}
 }
 
-// selectFieldFromSchemaFile parses a schema file (map root) and guides the user to select a field.
-// Returns a JSON Pointer like "/<SchemaName>/properties/foo" (without leading '#').
-func (ff *FileFetcher) selectFieldFromSchemaFile(input input.IInputMethods, file string) (string, error) {
+func (ff *FileFetcher) selectFieldFromSchemaFileWithBack(input input.IInputMethods, file string) (string, bool, error) {
 	b, err := os.ReadFile(file)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 
 	// schema files are marshaled as: map[schemaName]*propertyLite
 	var root map[string]*propertyLite
 	if err := yaml.Unmarshal(b, &root); err != nil {
-		return "", fmt.Errorf("[ERROR] failed to parse YAML: %s", file)
+		return "", false, fmt.Errorf("[ERROR] failed to parse YAML: %s", file)
 	}
 	if len(root) == 0 {
-		return "", fmt.Errorf("[ERROR] schema file has no root entries: %s", file)
+		return "", false, fmt.Errorf("[ERROR] schema file has no root entries: %s", file)
 	}
 
 	names := ff.sortedKeys(root)
+	// Add "back to select file" option at the beginning for root schema selection
+	options := make([]string, 0, len(names)+1)
+	options = append(options, BACK_TO_SELECT_FILE)
+	options = append(options, names...)
+
 	var schemaName string
-	if err := input.SelectInput(&schemaName, SELECT_ROOT_SCHEMA_MSG, names); err != nil {
-		return "", err
+	if err := input.SelectInput(&schemaName, SELECT_ROOT_SCHEMA_MSG, options); err != nil {
+		return "", false, err
+	}
+
+	// Check if user wants to go back to file selection
+	if schemaName == BACK_TO_SELECT_FILE {
+		return "", true, nil
 	}
 
 	pointer := "/" + ff.baseFetcher.EscapeJsonPointerToken(schemaName)
 	prop := root[schemaName]
 	if prop == nil {
-		return "", errors.New("selected root not found")
+		return "", false, errors.New("selected root not found")
 	}
 
 	// If object, dive into properties; otherwise allow use directly
@@ -317,10 +357,10 @@ func (ff *FileFetcher) selectFieldFromSchemaFile(input input.IInputMethods, file
 		// allow using the root as-is
 		var use string
 		if err := input.SelectInput(&use, USE_ROOT_SCHEMA_MSG, []string{USE_THIS, SELECT_FIELD}); err != nil {
-			return "", err
+			return "", false, err
 		}
 		if use == USE_THIS {
-			return pointer, nil
+			return pointer, false, nil
 		}
 	}
 
@@ -329,10 +369,21 @@ func (ff *FileFetcher) selectFieldFromSchemaFile(input input.IInputMethods, file
 	for {
 		if currentProp.Type == constants.OBJECT_TYPE && len(currentProp.Properties) > 0 {
 			keys := ff.sortedKeys(currentProp.Properties)
+			// Add "back to select file" option at the beginning
+			propertyOptions := make([]string, 0, len(keys)+1)
+			propertyOptions = append(propertyOptions, BACK_TO_SELECT_FILE)
+			propertyOptions = append(propertyOptions, keys...)
+
 			var sel string
-			if err := input.SelectInput(&sel, SELECT_PROPERTY_MSG, keys); err != nil {
-				return "", err
+			if err := input.SelectInput(&sel, SELECT_PROPERTY_MSG, propertyOptions); err != nil {
+				return "", false, err
 			}
+
+			// Check if user wants to go back to file selection
+			if sel == BACK_TO_SELECT_FILE {
+				return "", true, nil
+			}
+
 			pointer = pointer + PROPERTIES_PATH + "/" + ff.baseFetcher.EscapeJsonPointerToken(sel)
 			currentProp = currentProp.Properties[sel]
 			continue
@@ -340,17 +391,17 @@ func (ff *FileFetcher) selectFieldFromSchemaFile(input input.IInputMethods, file
 		if currentProp.Type == constants.ARRAY_TYPE && currentProp.Items != nil {
 			var goItems string
 			if err := input.SelectInput(&goItems, ARRAY_DETECTED_MSG, []string{ITEMS_OPTION, USE_THIS_FIELD}); err != nil {
-				return "", err
+				return "", false, err
 			}
 			if goItems == ITEMS_OPTION {
 				pointer = pointer + ITEMS_PATH
 				currentProp = currentProp.Items
 				continue
 			}
-			return pointer, nil
+			return pointer, false, nil
 		}
 		// primitive
-		return pointer, nil
+		return pointer, false, nil
 	}
 }
 
