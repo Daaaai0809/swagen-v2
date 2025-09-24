@@ -156,7 +156,7 @@ func (df *DirectoryFetcher) createDirectoryIfNotExists(path string) error {
 		return nil
 	}
 
-	fmt.Printf("[INFO] Directory %s is already exists", path)
+	fmt.Printf("[INFO] Directory %s already exists", path)
 
 	return nil
 }
