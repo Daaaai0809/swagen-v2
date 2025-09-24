@@ -300,7 +300,7 @@ func (ff *FileFetcher) selectFieldFromSchemaFile(input input.IInputMethods, file
 		return "", fmt.Errorf("[ERROR] schema file has no root entries: %s", file)
 	}
 
-	names := ff.sortedKeysPtrMap(root)
+	names := ff.sortedKeys(root)
 	var schemaName string
 	if err := input.SelectInput(&schemaName, SELECT_ROOT_SCHEMA_MSG, names); err != nil {
 		return "", err
@@ -355,15 +355,6 @@ func (ff *FileFetcher) selectFieldFromSchemaFile(input input.IInputMethods, file
 }
 
 func (ff *FileFetcher) sortedKeys(m map[string]*propertyLite) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	return keys
-}
-
-func (ff *FileFetcher) sortedKeysPtrMap(m map[string]*propertyLite) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
