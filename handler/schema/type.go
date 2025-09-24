@@ -2,6 +2,7 @@ package schema
 
 import (
 	"github.com/Daaaai0809/swagen-v2/constants"
+	"github.com/Daaaai0809/swagen-v2/fetcher"
 	"github.com/Daaaai0809/swagen-v2/handler"
 	"github.com/Daaaai0809/swagen-v2/input"
 	"github.com/Daaaai0809/swagen-v2/utils"
@@ -13,16 +14,30 @@ type SchemaName string
 
 type Schema struct {
 	*handler.Property
-	Input     input.IInputMethods
-	Validator validator.IInputValidator
+	Input            input.IInputMethods
+	Validator        validator.IInputValidator
+	FileFetcher      fetcher.IFileFetcher
+	DirectoryFetcher fetcher.IDirectoryFetcher
+	DirectoryPath    string `yaml:"-"`
 }
 
-func NewSchema(input input.IInputMethods, validator validator.IInputValidator) Schema {
+func NewSchema(input input.IInputMethods, validator validator.IInputValidator, fileFetcher fetcher.IFileFetcher, directoryFetcher fetcher.IDirectoryFetcher) Schema {
 	return Schema{
-		Input:     input,
-		Validator: validator,
-		Property:  handler.NewProperty(input, "", nil, &handler.Optionals{}, constants.MODE_SCHEMA),
+		Input:            input,
+		Validator:        validator,
+		FileFetcher:      fileFetcher,
+		DirectoryFetcher: directoryFetcher,
 	}
+}
+
+func (s Schema) InputDirectoryToGenerate() error {
+	dirPath, err := s.DirectoryFetcher.InteractiveResolveDir(s.Input, constants.MODE_SCHEMA)
+	if err != nil {
+		return err
+	}
+
+	s.DirectoryPath = dirPath
+	return nil
 }
 
 func (s Schema) InputPropertyNames() error {
@@ -32,7 +47,7 @@ func (s Schema) InputPropertyNames() error {
 	}
 
 	for _, name := range propertyNames {
-		property := handler.NewProperty(s.Input, name, s.Property, &handler.Optionals{}, constants.MODE_SCHEMA)
+		property := handler.NewProperty(s.Input, name, s.Property, &handler.Optionals{}, constants.MODE_SCHEMA, s.FileFetcher, s.DirectoryPath)
 		s.Properties[name] = property
 	}
 
@@ -48,7 +63,7 @@ func (s Schema) InputSchemaName(name *SchemaName) error {
 	return nil
 }
 
-func (s *Schema) GenerateSchema(fileName string, schemaName SchemaName, path string) error {
+func (s *Schema) GenerateSchema(fileName string, schemaName SchemaName) error {
 	data, err := yaml.Marshal(map[SchemaName]*handler.Property{
 		schemaName: s.Property,
 	})
@@ -56,7 +71,7 @@ func (s *Schema) GenerateSchema(fileName string, schemaName SchemaName, path str
 		return err
 	}
 
-	if err := utils.GenerateSchema(data, fileName, path); err != nil {
+	if err := utils.GenerateSchema(data, fileName, s.DirectoryPath); err != nil {
 		return err
 	}
 
