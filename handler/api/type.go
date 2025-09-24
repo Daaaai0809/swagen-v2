@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/Daaaai0809/swagen-v2/constants"
+	"github.com/Daaaai0809/swagen-v2/fetcher"
 	"github.com/Daaaai0809/swagen-v2/handler"
 	"github.com/Daaaai0809/swagen-v2/input"
 	"github.com/Daaaai0809/swagen-v2/utils"
@@ -14,6 +15,9 @@ type API struct {
 	APIValidator       validator.IInputValidator `yaml:"-"`
 	OptionalProperties handler.Optionals         `yaml:"-"`
 	ParameterNames     []string                  `yaml:"-"`
+	FileFetcher        fetcher.IFileFetcher      `yaml:"-"`
+	DirectoryFetcher   fetcher.IDirectoryFetcher `yaml:"-"`
+	DirectoryPath      string                    `yaml:"-"`
 
 	OperationID string               `yaml:"operationId,omitempty"`
 	Summary     string               `yaml:"summary,omitempty"`
@@ -24,14 +28,26 @@ type API struct {
 	Responses   map[string]*Response `yaml:"responses,omitempty"`
 }
 
-func NewAPI(input input.IInputMethods, validator validator.IInputValidator) *API {
+func NewAPI(input input.IInputMethods, validator validator.IInputValidator, fileFetcher fetcher.IFileFetcher, directoryFetcher fetcher.IDirectoryFetcher) *API {
 	return &API{
-		Input:        input,
-		APIValidator: validator,
-		Parameters:   []*Parameter{},
-		RequestBody:  nil,
-		Responses:    make(map[string]*Response),
+		Input:            input,
+		APIValidator:     validator,
+		FileFetcher:      fileFetcher,
+		DirectoryFetcher: directoryFetcher,
+		Parameters:       []*Parameter{},
+		RequestBody:      nil,
+		Responses:        make(map[string]*Response),
 	}
+}
+
+func (a *API) InputDirectoryToGenerate() error {
+	dirPath, err := a.DirectoryFetcher.InteractiveResolveDir(a.Input, constants.MODE_API)
+	if err != nil {
+		return err
+	}
+
+	a.DirectoryPath = dirPath
+	return nil
 }
 
 func (a *API) InputOptionalProperties(method string) error {
@@ -55,7 +71,7 @@ func (a *API) InputHTTPStatusCodes(method string) error {
 	}
 
 	for _, code := range statusCodes {
-		a.Responses[code] = NewResponse(a.Input, code, a.OptionalProperties)
+		a.Responses[code] = NewResponse(a.Input, code, a.OptionalProperties, a.FileFetcher, a.DirectoryPath)
 	}
 
 	return nil
@@ -66,9 +82,7 @@ func (a *API) ReadParameterNames() error {
 	if err := a.Input.MultipleStringInput(&names, "Enter parameter names", a.APIValidator.Validator_Alphanumeric_Underscore_Allow_Empty()); err != nil {
 		return err
 	}
-	for _, name := range names {
-		a.ParameterNames = append(a.ParameterNames, name)
-	}
+	a.ParameterNames = append(a.ParameterNames, names...)
 	return nil
 }
 
@@ -114,7 +128,7 @@ func (a *API) ReadTags() error {
 }
 
 func (a *API) ReadRequestBody() error {
-	reqBody := NewRequestBody(a.Input, a.OptionalProperties)
+	reqBody := NewRequestBody(a.Input, a.OptionalProperties, a.FileFetcher, a.DirectoryPath)
 
 	if err := reqBody.ReadAll(); err != nil {
 		return err
@@ -124,7 +138,7 @@ func (a *API) ReadRequestBody() error {
 	return nil
 }
 
-func (a *API) GenerateFile(fileName, method, path string) error {
+func (a *API) GenerateFile(fileName, method string) error {
 	data, err := yaml.Marshal(map[string]*API{
 		method: a,
 	})
@@ -132,7 +146,7 @@ func (a *API) GenerateFile(fileName, method, path string) error {
 		return err
 	}
 
-	if err := utils.GenerateSchema(data, fileName, path); err != nil {
+	if err := utils.GenerateSchema(data, fileName, a.DirectoryPath); err != nil {
 		return err
 	}
 
@@ -147,11 +161,11 @@ type Parameter struct {
 	Schema *ParamSchema `yaml:"schema,omitempty"`
 }
 
-func NewParameter(input input.IInputMethods, name string) *Parameter {
+func NewParameter(input input.IInputMethods, name string, fileFetcher fetcher.IFileFetcher, directoryPath string) *Parameter {
 	return &Parameter{
 		Input:  input,
 		Name:   name,
-		Schema: NewParamSchema(input),
+		Schema: NewParamSchema(input, fileFetcher, directoryPath),
 	}
 }
 
@@ -178,8 +192,10 @@ func (p *Parameter) ReadAll() error {
 }
 
 type ParamSchema struct {
-	Input              input.IInputMethods `yaml:"-"`
-	OptionalProperties handler.Optionals   `yaml:"-"`
+	Input              input.IInputMethods  `yaml:"-"`
+	OptionalProperties handler.Optionals    `yaml:"-"`
+	FileFetcher        fetcher.IFileFetcher `yaml:"-"`
+	DirectoryPath      string               `yaml:"-"`
 
 	Type    string `yaml:"type,omitempty"`
 	Format  string `yaml:"format,omitempty"`
@@ -189,9 +205,11 @@ type ParamSchema struct {
 	Ref     string `yaml:"$ref,omitempty"`
 }
 
-func NewParamSchema(input input.IInputMethods) *ParamSchema {
+func NewParamSchema(input input.IInputMethods, fileFetcher fetcher.IFileFetcher, directoryPath string) *ParamSchema {
 	return &ParamSchema{
-		Input: input,
+		Input:         input,
+		FileFetcher:   fileFetcher,
+		DirectoryPath: directoryPath,
 	}
 }
 
@@ -250,7 +268,7 @@ func (ps *ParamSchema) ReadMin() error {
 }
 
 func (ps *ParamSchema) ReadRef() error {
-	ref, err := utils.InteractiveResolveRef(ps.Input, constants.MODE_API)
+	ref, err := ps.FileFetcher.InteractiveResolveRef(ps.Input, constants.MODE_API, ps.DirectoryPath)
 	if err != nil {
 		return err
 	}
@@ -304,19 +322,23 @@ func (ps *ParamSchema) ReadAll() error {
 }
 
 type RequestBody struct {
-	Input              input.IInputMethods `yaml:"-"`
-	OptionalProperties handler.Optionals   `yaml:"-"`
+	Input              input.IInputMethods  `yaml:"-"`
+	OptionalProperties handler.Optionals    `yaml:"-"`
+	FileFetcher        fetcher.IFileFetcher `yaml:"-"`
+	DirectoryPath      string               `yaml:"-"`
 
 	Description string                `yaml:"description,omitempty"`
 	Required    bool                  `yaml:"required,omitempty"`
 	Content     map[string]*MediaType `yaml:"content,omitempty"`
 }
 
-func NewRequestBody(input input.IInputMethods, optionalProperties handler.Optionals) *RequestBody {
+func NewRequestBody(input input.IInputMethods, optionalProperties handler.Optionals, fileFetcher fetcher.IFileFetcher, directoryPath string) *RequestBody {
 	return &RequestBody{
 		Input:              input,
 		OptionalProperties: optionalProperties,
 		Content:            make(map[string]*MediaType),
+		FileFetcher:        fileFetcher,
+		DirectoryPath:      directoryPath,
 	}
 }
 
@@ -329,7 +351,7 @@ func (rq *RequestBody) InputMediaTypes() error {
 
 	for _, mt := range mediaTypes {
 		mimeType := constants.MediaTypeMap[mt]
-		rq.Content[mimeType] = NewMediaType(rq.Input, rq.OptionalProperties)
+		rq.Content[mimeType] = NewMediaType(rq.Input, rq.OptionalProperties, rq.FileFetcher, rq.DirectoryPath)
 	}
 
 	return nil
@@ -381,10 +403,10 @@ type MediaType struct {
 	// Example string `yaml:"example,omitempty"`
 }
 
-func NewMediaType(input input.IInputMethods, optionalProperties handler.Optionals) *MediaType {
+func NewMediaType(input input.IInputMethods, optionalProperties handler.Optionals, fileFetcher fetcher.IFileFetcher, directoryPath string) *MediaType {
 	return &MediaType{
 		Input:  input,
-		Schema: handler.NewProperty(input, "schema", nil, &optionalProperties, constants.MODE_API),
+		Schema: handler.NewProperty(input, "schema", nil, &optionalProperties, constants.MODE_API, fileFetcher, directoryPath),
 	}
 }
 
@@ -397,20 +419,24 @@ func (mt *MediaType) ReadAll() error {
 }
 
 type Response struct {
-	Input              input.IInputMethods `yaml:"-"`
-	Code               string              `yaml:"-"`
-	OptionalProperties handler.Optionals   `yaml:"-"`
+	Input              input.IInputMethods  `yaml:"-"`
+	Code               string               `yaml:"-"`
+	OptionalProperties handler.Optionals    `yaml:"-"`
+	FileFetcher        fetcher.IFileFetcher `yaml:"-"`
+	DirectoryPath      string               `yaml:"-"`
 
 	Description string                `yaml:"description,omitempty"`
 	Content     map[string]*MediaType `yaml:"content,omitempty"`
 }
 
-func NewResponse(input input.IInputMethods, code string, optionalProperties handler.Optionals) *Response {
+func NewResponse(input input.IInputMethods, code string, optionalProperties handler.Optionals, fileFetcher fetcher.IFileFetcher, directoryPath string) *Response {
 	return &Response{
 		Input:              input,
 		Code:               code,
 		OptionalProperties: optionalProperties,
 		Content:            make(map[string]*MediaType),
+		FileFetcher:        fileFetcher,
+		DirectoryPath:      directoryPath,
 	}
 }
 
@@ -423,7 +449,7 @@ func (r *Response) InputMediaTypes() error {
 
 	for _, mt := range mediaTypes {
 		mimeType := constants.MediaTypeMap[mt]
-		r.Content[mimeType] = NewMediaType(r.Input, r.OptionalProperties)
+		r.Content[mimeType] = NewMediaType(r.Input, r.OptionalProperties, r.FileFetcher, r.DirectoryPath)
 	}
 
 	return nil
