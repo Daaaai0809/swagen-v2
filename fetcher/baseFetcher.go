@@ -1,13 +1,9 @@
 package fetcher
 
 import (
-	"fmt"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
-
-	"github.com/Daaaai0809/swagen-v2/input"
 )
 
 // Constants for common use across fetcher files
@@ -28,9 +24,6 @@ const (
 
 // IBaseFetcher defines common operations for file and directory fetching
 type IBaseFetcher interface {
-	// SelectFileInteractive allows interactive file selection from a directory
-	SelectFileInteractive(input input.IInputMethods, start string, fileFilter func(string) bool) (string, error)
-
 	// SortedStringKeys returns sorted keys from a map[string]interface{}
 	SortedStringKeys(m map[string]interface{}) []string
 
@@ -50,55 +43,6 @@ type BaseFetcher struct{}
 // NewBaseFetcher creates a new BaseFetcher instance
 func NewBaseFetcher() IBaseFetcher {
 	return &BaseFetcher{}
-}
-
-// SelectFileInteractive lets the user navigate directories and select a file based on filter.
-func (bf *BaseFetcher) SelectFileInteractive(input input.IInputMethods, start string, fileFilter func(string) bool) (string, error) {
-	cwd := filepath.Clean(start)
-	for {
-		dirs, files, err := bf.ReadDirectoryEntries(cwd)
-		if err != nil {
-			return "", fmt.Errorf("[ERROR] cannot read directory: %s", cwd)
-		}
-
-		// Filter files
-		var filteredFiles []string
-		for _, file := range files {
-			if fileFilter(file) {
-				filteredFiles = append(filteredFiles, file)
-			}
-		}
-
-		items := make([]string, 0, len(dirs)+len(filteredFiles)+1)
-		if cwd != filepath.Clean(start) {
-			items = append(items, PARENT_DIR)
-		}
-		items = append(items, dirs...)
-		items = append(items, filteredFiles...)
-
-		if len(items) == 0 {
-			return "", fmt.Errorf("[ERROR] no selectable items in directory: %s", cwd)
-		}
-
-		var sel string
-		if err := input.SelectInput(&sel, fmt.Sprintf("Select entry in %s", cwd), items); err != nil {
-			return "", err
-		}
-
-		switch sel {
-		case PARENT_DIR:
-			cwd = filepath.Dir(cwd)
-			continue
-		default:
-			// directory?
-			if strings.HasSuffix(sel, "/") {
-				cwd = filepath.Join(cwd, strings.TrimSuffix(sel, "/"))
-				continue
-			}
-			// file selected
-			return filepath.Join(cwd, sel), nil
-		}
-	}
 }
 
 // ReadDirectoryEntries reads and categorizes directory entries into dirs and files

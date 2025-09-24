@@ -63,7 +63,7 @@ func (ff *FileFetcher) InteractiveResolveRef(input input.IInputMethods, mode con
 	}
 
 	// Directory traversal to pick a YAML file
-	selectedFile, err := ff.selectYamlFileInteractive(input, startPath)
+	selectedFile, err := ff.selectFileInteractive(input, startPath)
 	if err != nil {
 		return "", err
 	}
@@ -149,14 +149,58 @@ func (ff *FileFetcher) decideStartPath(input input.IInputMethods, mode constants
 	}
 }
 
-// selectYamlFileInteractive lets the user navigate directories and select a YAML file.
-func (ff *FileFetcher) selectYamlFileInteractive(input input.IInputMethods, start string) (string, error) {
-	yamlFilter := func(filename string) bool {
+// SelectFileInteractive lets the user navigate directories and select a file based on filter.
+func (ff *FileFetcher) selectFileInteractive(input input.IInputMethods, start string) (string, error) {
+	fileFilter := func(filename string) bool {
 		lower := strings.ToLower(filename)
 		return strings.HasSuffix(lower, YAML_EXT) || strings.HasSuffix(lower, YML_EXT)
 	}
 
-	return ff.baseFetcher.SelectFileInteractive(input, start, yamlFilter)
+	cwd := filepath.Clean(start)
+	for {
+		dirs, files, err := ff.baseFetcher.ReadDirectoryEntries(cwd)
+		if err != nil {
+			return "", fmt.Errorf("[ERROR] cannot read directory: %s", cwd)
+		}
+
+		// Filter files
+		var filteredFiles []string
+		for _, file := range files {
+			if fileFilter(file) {
+				filteredFiles = append(filteredFiles, file)
+			}
+		}
+
+		items := make([]string, 0, len(dirs)+len(filteredFiles)+1)
+		if cwd != filepath.Clean(start) {
+			items = append(items, PARENT_DIR)
+		}
+		items = append(items, dirs...)
+		items = append(items, filteredFiles...)
+
+		if len(items) == 0 {
+			return "", fmt.Errorf("[ERROR] no selectable items in directory: %s", cwd)
+		}
+
+		var sel string
+		if err := input.SelectInput(&sel, fmt.Sprintf("Select entry in %s", cwd), items); err != nil {
+			return "", err
+		}
+
+		switch sel {
+		case PARENT_DIR:
+			cwd = filepath.Dir(cwd)
+			continue
+		default:
+			// directory?
+			if strings.HasSuffix(sel, "/") {
+				cwd = filepath.Join(cwd, strings.TrimSuffix(sel, "/"))
+				continue
+			}
+			// file selected
+			return filepath.Join(cwd, sel), nil
+		}
+	}
 }
 
 // selectFieldFromModelFile parses a model file and guides the user to select a field.
