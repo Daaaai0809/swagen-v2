@@ -14,6 +14,7 @@ type SchemaName string
 
 type Schema struct {
 	*handler.Property
+
 	Input            input.IInputMethods
 	Validator        validator.IInputValidator
 	FileFetcher      fetcher.IFileFetcher
@@ -30,17 +31,18 @@ func NewSchema(input input.IInputMethods, validator validator.IInputValidator, f
 	}
 }
 
-func (s Schema) InputDirectoryToGenerate() error {
+func (s *Schema) InputDirectoryToGenerate() error {
 	dirPath, err := s.DirectoryFetcher.InteractiveResolveDir(s.Input, constants.MODE_SCHEMA)
 	if err != nil {
 		return err
 	}
 
 	s.DirectoryPath = dirPath
+
 	return nil
 }
 
-func (s Schema) InputPropertyNames() error {
+func (s *Schema) InputPropertyNames() error {
 	var propertyNames []string
 	if err := s.Input.MultipleStringInput(&propertyNames, "Enter property names", s.Validator.Validator_Alphanumeric_Underscore_Allow_Empty()); err != nil {
 		return err
@@ -54,7 +56,7 @@ func (s Schema) InputPropertyNames() error {
 	return nil
 }
 
-func (s Schema) InputSchemaName(name *SchemaName) error {
+func (s *Schema) InputSchemaName(name *SchemaName) error {
 	err := s.Input.StringInput((*string)(name), "Schema Name", s.Validator.Validator_Alphanumeric_Underscore())
 	if err != nil {
 		return err
