@@ -74,7 +74,7 @@ func (ah *APIHandler) HandleGenerateAPICommand() error {
 		}
 
 		for _, name := range api.ParameterNames {
-			param := NewParameter(api.Input, name, api.FileFetcher)
+			param := NewParameter(api.Input, name, api.FileFetcher, api.DirectoryPath)
 			api.Parameters = append(api.Parameters, param)
 			if err := param.ReadAll(); err != nil {
 				return err

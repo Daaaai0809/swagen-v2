@@ -1,7 +1,9 @@
 package schema
 
 import (
+	"github.com/Daaaai0809/swagen-v2/constants"
 	"github.com/Daaaai0809/swagen-v2/fetcher"
+	"github.com/Daaaai0809/swagen-v2/handler"
 	"github.com/Daaaai0809/swagen-v2/input"
 	"github.com/Daaaai0809/swagen-v2/validator"
 )
@@ -33,6 +35,8 @@ func (sh *SchemaHandler) HandleGenerateSchemaCommand() error {
 	if err := sh.Input.StringInput(&fileName, "Enter the file name", sh.Validator.Validator_Alphanumeric_Underscore()); err != nil {
 		return err
 	}
+
+	schema.Property = handler.NewProperty(sh.Input, "", nil, &handler.Optionals{}, constants.MODE_SCHEMA, sh.FileFetcher, schema.DirectoryPath)
 
 	schema.Type = "object"
 

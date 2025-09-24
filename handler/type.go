@@ -17,6 +17,7 @@ type Property struct {
 	Mode               constants.InputMode  `yaml:"-"` // Mode of the schema (MODEL, SCHEMA, API)
 	OptionalProperties *Optionals           `yaml:"-"`
 	FileFetcher        fetcher.IFileFetcher `yaml:"-"`
+	DirectoryPath      string               `yaml:"-"`
 
 	Type       string               `yaml:"type,omitempty"`
 	Format     string               `yaml:"format,omitempty"`
@@ -28,12 +29,13 @@ type Property struct {
 	Ref        string               `yaml:"$ref,omitempty"` // Reference to another schema
 }
 
-func NewProperty(input input.IInputMethods, propertyName string, parentProperty *Property, optionalProperties *Optionals, mode constants.InputMode, fileFetcher fetcher.IFileFetcher) *Property {
+func NewProperty(input input.IInputMethods, propertyName string, parentProperty *Property, optionalProperties *Optionals, mode constants.InputMode, fileFetcher fetcher.IFileFetcher, directoryPath string) *Property {
 	return &Property{
 		Input:              input,
 		PropertyName:       propertyName,
 		ParentProperty:     parentProperty,
 		Mode:               mode,
+		DirectoryPath:      directoryPath,
 		FileFetcher:        fileFetcher,
 		OptionalProperties: optionalProperties,
 		Type:               "",
@@ -101,7 +103,7 @@ func (s *Property) readNullable() error {
 }
 
 func (s *Property) readRef() error {
-	ref, err := s.FileFetcher.InteractiveResolveRef(s.Input, s.Mode)
+	ref, err := s.FileFetcher.InteractiveResolveRef(s.Input, s.Mode, s.DirectoryPath)
 	if err != nil {
 		return err
 	}
@@ -140,7 +142,7 @@ func (s *Property) ReadProperty() error {
 		return err
 	}
 
-	property := NewProperty(s.Input, propertyName, s, s.OptionalProperties, s.Mode, s.FileFetcher)
+	property := NewProperty(s.Input, propertyName, s, s.OptionalProperties, s.Mode, s.FileFetcher, s.DirectoryPath)
 
 	if err := property.ReadAll(); err != nil {
 		return err
@@ -204,7 +206,7 @@ func (s *Property) readPropertyNames() error {
 	}
 
 	for _, name := range propNames {
-		s.Properties[name] = NewProperty(s.Input, name, s, s.OptionalProperties, s.Mode, s.FileFetcher)
+		s.Properties[name] = NewProperty(s.Input, name, s, s.OptionalProperties, s.Mode, s.FileFetcher, s.DirectoryPath)
 	}
 
 	return nil

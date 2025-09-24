@@ -25,7 +25,6 @@ func NewSchema(input input.IInputMethods, validator validator.IInputValidator, f
 	return Schema{
 		Input:            input,
 		Validator:        validator,
-		Property:         handler.NewProperty(input, "", nil, &handler.Optionals{}, constants.MODE_SCHEMA, fileFetcher),
 		FileFetcher:      fileFetcher,
 		DirectoryFetcher: directoryFetcher,
 	}
@@ -48,7 +47,7 @@ func (s Schema) InputPropertyNames() error {
 	}
 
 	for _, name := range propertyNames {
-		property := handler.NewProperty(s.Input, name, s.Property, &handler.Optionals{}, constants.MODE_SCHEMA, s.FileFetcher)
+		property := handler.NewProperty(s.Input, name, s.Property, &handler.Optionals{}, constants.MODE_SCHEMA, s.FileFetcher, s.DirectoryPath)
 		s.Properties[name] = property
 	}
 

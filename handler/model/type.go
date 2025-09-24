@@ -58,7 +58,7 @@ func (m *Model) ReadPropertyNames() error {
 	}
 
 	for _, name := range propertyNames {
-		property := handler.NewProperty(m.Input, name, nil, &handler.Optionals{}, constants.MODE_MODEL, nil)
+		property := handler.NewProperty(m.Input, name, nil, &handler.Optionals{}, constants.MODE_MODEL, nil, m.DirectoryPath)
 		m.Properties[name] = property
 	}
 

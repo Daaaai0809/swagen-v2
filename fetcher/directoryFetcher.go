@@ -85,20 +85,33 @@ func (df *DirectoryFetcher) selectDirectoryInteractive(input input.IInputMethods
 			if err := df.createDirectoryIfNotExists(newDirPath); err != nil {
 				return "", err
 			}
-			return newDirPath, nil
+
+			useDir, err := df.selectUseDirectory(newDirPath)
+			if err != nil {
+				return "", err
+			}
+
+			if useDir {
+				return newDirPath, nil
+			}
+
+			cwd = newDirPath
+			continue
 		default:
 			// directory?
 			if strings.HasSuffix(sel, "/") {
 				cwd = filepath.Join(cwd, strings.TrimSuffix(sel, "/"))
-				// Confirm selection
-				confirmItems := []string{USE_THIS, "Continue browsing"}
-				var confirmSel string
-				if err := input.SelectInput(&confirmSel, fmt.Sprintf("Selected directory: %s. What next?", cwd), confirmItems); err != nil {
+
+				useDir, err := df.selectUseDirectory(cwd)
+
+				if err != nil {
 					return "", err
 				}
-				if confirmSel == USE_THIS {
+
+				if useDir {
 					return cwd, nil
 				}
+
 				continue
 			}
 			// Should not reach here as only directories are listed
@@ -146,4 +159,16 @@ func (df *DirectoryFetcher) createDirectoryIfNotExists(path string) error {
 	fmt.Printf("[INFO] Directory %s is already exists", path)
 
 	return nil
+}
+
+func (df *DirectoryFetcher) selectUseDirectory(cwd string) (bool, error) {
+	confirmItems := []string{USE_THIS, "Continue browsing"}
+	var confirmSel string
+	if err := df.InputMethod.SelectInput(&confirmSel, fmt.Sprintf("Selected directory: %s. What next?", cwd), confirmItems); err != nil {
+		return false, err
+	}
+	if confirmSel == USE_THIS {
+		return true, nil
+	}
+	return false, nil
 }

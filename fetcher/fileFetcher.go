@@ -31,7 +31,7 @@ const (
 )
 
 type IFileFetcher interface {
-	InteractiveResolveRef(input input.IInputMethods, mode constants.InputMode) (string, error)
+	InteractiveResolveRef(input input.IInputMethods, mode constants.InputMode, destBase string) (string, error)
 }
 
 // FileFetcher handles file-specific fetching operations
@@ -55,19 +55,11 @@ func NewFileFetcher() *FileFetcher {
 //   - API mode: ask user to choose start path (SWAGEN_MODEL_PATH or SWAGEN_SCHEMA_PATH)
 //   - After selecting a file, parse YAML into Model or Schema(map) and select a field
 //   - Build JSON Pointer and relative file path (relative to SCHEMA_PATH or API_PATH)
-func (ff *FileFetcher) InteractiveResolveRef(input input.IInputMethods, mode constants.InputMode) (string, error) {
+func (ff *FileFetcher) InteractiveResolveRef(input input.IInputMethods, mode constants.InputMode, destBase string) (string, error) {
 	// Decide start path and destination base to compute relative path
 	startPath, fileKind, err := ff.decideStartPath(input, mode)
 	if err != nil {
 		return "", err
-	}
-
-	destBase := utils.GetEnv(utils.SWAGEN_SCHEMA_PATH, "")
-	if mode == constants.MODE_API {
-		destBase = utils.GetEnv(utils.SWAGEN_API_PATH, "")
-	}
-	if destBase == "" {
-		destBase = DEFAULT_DEST_PATH
 	}
 
 	// Directory traversal to pick a YAML file
