@@ -3,31 +3,36 @@ package schema
 import (
 	"github.com/Daaaai0809/swagen-v2/fetcher"
 	"github.com/Daaaai0809/swagen-v2/input"
-	"github.com/Daaaai0809/swagen-v2/utils"
 	"github.com/Daaaai0809/swagen-v2/validator"
 )
 
 type SchemaHandler struct {
-	Input       input.IInputMethods
-	Validator   validator.IInputValidator
-	FileFetcher fetcher.IFileFetcher
+	Input            input.IInputMethods
+	Validator        validator.IInputValidator
+	FileFetcher      fetcher.IFileFetcher
+	DirectoryFetcher fetcher.IDirectoryFetcher
 }
 
-func NewSchemaHandler(input input.IInputMethods, validator validator.IInputValidator, fileFetcher fetcher.IFileFetcher) *SchemaHandler {
+func NewSchemaHandler(input input.IInputMethods, validator validator.IInputValidator, fileFetcher fetcher.IFileFetcher, directoryFetcher fetcher.IDirectoryFetcher) *SchemaHandler {
 	return &SchemaHandler{
-		Input:       input,
-		Validator:   validator,
-		FileFetcher: fileFetcher,
+		Input:            input,
+		Validator:        validator,
+		FileFetcher:      fileFetcher,
+		DirectoryFetcher: directoryFetcher,
 	}
 }
 
 func (sh *SchemaHandler) HandleGenerateSchemaCommand() error {
+	schema := NewSchema(sh.Input, sh.Validator, sh.FileFetcher, sh.DirectoryFetcher)
+
+	if err := schema.InputDirectoryToGenerate(); err != nil {
+		return err
+	}
+
 	var fileName string
 	if err := sh.Input.StringInput(&fileName, "Enter the file name", sh.Validator.Validator_Alphanumeric_Underscore()); err != nil {
 		return err
 	}
-
-	schema := NewSchema(sh.Input, sh.Validator, sh.FileFetcher)
 
 	schema.Type = "object"
 
@@ -46,7 +51,7 @@ func (sh *SchemaHandler) HandleGenerateSchemaCommand() error {
 		}
 	}
 
-	if err := schema.GenerateSchema(fileName, schemaName, utils.GetEnv(utils.SWAGEN_SCHEMA_PATH, "schema/")); err != nil {
+	if err := schema.GenerateSchema(fileName, schemaName); err != nil {
 		return err
 	}
 

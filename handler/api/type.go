@@ -16,6 +16,8 @@ type API struct {
 	OptionalProperties handler.Optionals         `yaml:"-"`
 	ParameterNames     []string                  `yaml:"-"`
 	FileFetcher        fetcher.IFileFetcher      `yaml:"-"`
+	DirectoryFetcher   fetcher.IDirectoryFetcher `yaml:"-"`
+	DirectoryPath      string                    `yaml:"-"`
 
 	OperationID string               `yaml:"operationId,omitempty"`
 	Summary     string               `yaml:"summary,omitempty"`
@@ -26,15 +28,26 @@ type API struct {
 	Responses   map[string]*Response `yaml:"responses,omitempty"`
 }
 
-func NewAPI(input input.IInputMethods, validator validator.IInputValidator, fileFetcher fetcher.IFileFetcher) *API {
+func NewAPI(input input.IInputMethods, validator validator.IInputValidator, fileFetcher fetcher.IFileFetcher, directoryFetcher fetcher.IDirectoryFetcher) *API {
 	return &API{
-		Input:        input,
-		APIValidator: validator,
-		FileFetcher:  fileFetcher,
-		Parameters:   []*Parameter{},
-		RequestBody:  nil,
-		Responses:    make(map[string]*Response),
+		Input:            input,
+		APIValidator:     validator,
+		FileFetcher:      fileFetcher,
+		DirectoryFetcher: directoryFetcher,
+		Parameters:       []*Parameter{},
+		RequestBody:      nil,
+		Responses:        make(map[string]*Response),
 	}
+}
+
+func (a *API) InputDirectoryToGenerate() error {
+	dirPath, err := a.DirectoryFetcher.InteractiveResolveDir(a.Input, constants.MODE_API)
+	if err != nil {
+		return err
+	}
+
+	a.DirectoryPath = dirPath
+	return nil
 }
 
 func (a *API) InputOptionalProperties(method string) error {
@@ -69,9 +82,7 @@ func (a *API) ReadParameterNames() error {
 	if err := a.Input.MultipleStringInput(&names, "Enter parameter names", a.APIValidator.Validator_Alphanumeric_Underscore_Allow_Empty()); err != nil {
 		return err
 	}
-	for _, name := range names {
-		a.ParameterNames = append(a.ParameterNames, name)
-	}
+	a.ParameterNames = append(a.ParameterNames, names...)
 	return nil
 }
 
@@ -127,7 +138,7 @@ func (a *API) ReadRequestBody() error {
 	return nil
 }
 
-func (a *API) GenerateFile(fileName, method, path string) error {
+func (a *API) GenerateFile(fileName, method string) error {
 	data, err := yaml.Marshal(map[string]*API{
 		method: a,
 	})
@@ -135,7 +146,7 @@ func (a *API) GenerateFile(fileName, method, path string) error {
 		return err
 	}
 
-	if err := utils.GenerateSchema(data, fileName, path); err != nil {
+	if err := utils.GenerateSchema(data, fileName, a.DirectoryPath); err != nil {
 		return err
 	}
 

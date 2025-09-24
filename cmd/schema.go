@@ -13,7 +13,10 @@ var schemaCmd = &cobra.Command{
 	Short: "Generate a Request/Response Schema file",
 	Long:  `Interactively generate a schema file for your models.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		schemaHandler := schema.NewSchemaHandler(input.NewInputMethods(), validator.NewInputValidator(), fetcher.NewFileFetcher())
+		inputMethods := input.NewInputMethods()
+		validation := validator.NewInputValidator()
+		directoryFetcher := fetcher.NewDirectoryFetcher(inputMethods, validation)
+		schemaHandler := schema.NewSchemaHandler(inputMethods, validation, fetcher.NewFileFetcher(), directoryFetcher)
 		if err := schemaHandler.HandleGenerateSchemaCommand(); err != nil {
 			cmd.PrintErrf("[ERROR] Generating schema: %v\n", err)
 			return err

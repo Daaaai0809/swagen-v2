@@ -13,7 +13,10 @@ var apiCmd = &cobra.Command{
 	Short: "Generate an Path file",
 	Long:  `Interactively generate an API file for your endpoints.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		apiHandler := api.NewAPIHandler(input.NewInputMethods(), validator.NewInputValidator(), fetcher.NewFileFetcher())
+		inputMethods := input.NewInputMethods()
+		validation := validator.NewInputValidator()
+		directoryFetcher := fetcher.NewDirectoryFetcher(inputMethods, validation)
+		apiHandler := api.NewAPIHandler(inputMethods, validation, fetcher.NewFileFetcher(), directoryFetcher)
 		if err := apiHandler.HandleGenerateAPICommand(); err != nil {
 			cmd.PrintErrf("[ERROR] Generating API: %v\n", err)
 			return err
