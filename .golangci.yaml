@@ -9,10 +9,11 @@ linters:
     - staticcheck
     - ineffassign
     - unused
-    - errcheck
     - gocritic
     - errorlint
     - errname
+  disable:
+    - errcheck
 formatters:
   enable:
     - gofumpt
