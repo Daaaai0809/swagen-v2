@@ -14,12 +14,12 @@ func GenerateSchema(input []byte, fileName, path string) error {
 	}
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		if err := os.MkdirAll(path, 0755); err != nil {
+		if err := os.MkdirAll(path, 0o755); err != nil {
 			return err
 		}
 	}
 
-	if err := os.WriteFile(name, input, 0644); err != nil {
+	if err := os.WriteFile(name, input, 0o644); err != nil {
 		return err
 	}
 
