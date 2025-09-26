@@ -9,7 +9,6 @@ linters:
     - staticcheck
     - gosimple
     - ineffassign
-    - typecheck
     - unused
     - errcheck
     - gocritic
