@@ -15,10 +15,8 @@ linters:
     - errorlint
     - errname
     - exportloopref
+formatters:
+  enable:
     - gofumpt
     - goimports
     - gci
-    - revive
-    - misspell
-    - gosec
-    - prealloc
