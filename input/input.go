@@ -371,11 +371,12 @@ func (im *InputMethods) MultipleSelectInput(result *[]string, label string, item
 				check = "[x]"
 			}
 			display := e.label
-			if cur && isSel {
+			switch {
+			case cur && isSel:
 				display = selectedStyle(display)
-			} else if cur {
+			case cur:
 				display = activeStyle(display)
-			} else if isSel {
+			case isSel:
 				display = selectedStyle(display)
 			}
 			pointer := "  "

@@ -286,7 +286,7 @@ func (ff *FileFetcher) selectFieldFromModelFileWithBack(input input.IInputMethod
 			}
 			if goDeeper == YES_OPTION {
 				current = prop.Properties
-				pointer = pointer + PROPERTIES_PATH
+				pointer += PROPERTIES_PATH
 				continue
 			}
 			return pointer, false, nil
@@ -298,11 +298,11 @@ func (ff *FileFetcher) selectFieldFromModelFileWithBack(input input.IInputMethod
 				return "", false, err
 			}
 			if goItems == ITEMS_OPTION {
-				pointer = pointer + ITEMS_PATH
+				pointer += ITEMS_PATH
 				// dive into the item shape
 				if prop.Items.Type == constants.OBJECT_TYPE && len(prop.Items.Properties) > 0 {
 					current = prop.Items.Properties
-					pointer = pointer + PROPERTIES_PATH
+					pointer += PROPERTIES_PATH
 					continue
 				}
 				// items is primitive or non-object
@@ -394,7 +394,7 @@ func (ff *FileFetcher) selectFieldFromSchemaFileWithBack(input input.IInputMetho
 				return "", false, err
 			}
 			if goItems == ITEMS_OPTION {
-				pointer = pointer + ITEMS_PATH
+				pointer += ITEMS_PATH
 				currentProp = currentProp.Items
 				continue
 			}

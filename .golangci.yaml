@@ -1,2 +1,21 @@
 version: "2"
-# TODO: 詳細なlintの設計を行う (2025/06/02)
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  enable:
+    - govet
+    - staticcheck
+    - ineffassign
+    - unused
+    - gocritic
+    - errorlint
+    - errname
+  disable:
+    - errcheck
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+    - gci

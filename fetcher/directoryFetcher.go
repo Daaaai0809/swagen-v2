@@ -103,7 +103,6 @@ func (df *DirectoryFetcher) selectDirectoryInteractive(input input.IInputMethods
 				cwd = filepath.Join(cwd, strings.TrimSuffix(sel, "/"))
 
 				useDir, err := df.selectUseDirectory(cwd)
-
 				if err != nil {
 					return "", err
 				}
@@ -141,7 +140,7 @@ func (df *DirectoryFetcher) decideStartPath(mode constants.InputMode) (string, e
 		}
 		return p, nil
 	default:
-		return "", fmt.Errorf("[ERROR] unsupported mode: %s", mode)
+		return "", fmt.Errorf("[ERROR] unsupported mode: %v", mode)
 	}
 }
 
