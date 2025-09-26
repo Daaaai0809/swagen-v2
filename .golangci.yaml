@@ -1,10 +1,9 @@
-version: "3"
 run:
   timeout: 5m
   tests: true
+
 linters:
   enable:
-    # バグ・冗長検出（定番）
     - govet
     - staticcheck
     - gosimple
@@ -13,19 +12,14 @@ linters:
     - unused
     - errcheck
     - gocritic
-    # エラーハンドリング/命名の質
     - errorlint
     - errname
     - exportloopref
-    # フォーマット/インポート
     - gofmt
     - gofumpt
     - goimports
     - gci
-    # スタイル・ドキュメント
     - revive
     - misspell
-    # セキュリティ（OSS公開なら入れておくと安心）
     - gosec
-    # パフォーマンス系の軽い指摘
     - prealloc
