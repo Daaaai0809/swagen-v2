@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"os"
 
 	"github.com/Daaaai0809/swagen-v2/constants"
@@ -143,8 +144,13 @@ func (ah *APIHandler) HandleAddToAPICommand() error {
 
 	api.DirectoryPath = directoryPath
 
+	canAddMethods := constants.GetNotExistingMethods(existingAPI.GetMethods())
+	if len(canAddMethods) == 0 {
+		return errors.New("[ERROR] All HTTP methods are already defined in the existing API file")
+	}
+
 	var method string
-	if err := ah.Input.SelectInput(&method, "Select the HTTP method for the API", constants.GetNotExistingMethods(existingAPI.GetMethods())); err != nil {
+	if err := ah.Input.SelectInput(&method, "Select the HTTP method for the API", canAddMethods); err != nil {
 		return err
 	}
 
