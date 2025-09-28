@@ -17,3 +17,13 @@ build-binary:
 	go build -o ./example/swagen-v2.local
 
 	@echo "[INFO] Success build swagen-v2.local"
+
+check-golangci:
+	@echo "[INFO] Check golangci-lint"
+	golangci-lint run
+	@echo "[INFO] Success check golangci-lint"
+
+fix-golangci:
+	@echo "[INFO] Fix golangci-lint"
+	golangci-lint run --fix
+	@echo "[INFO] Success fix golangci-lint"

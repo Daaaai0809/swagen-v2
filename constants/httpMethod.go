@@ -37,3 +37,29 @@ var HTTPMethodsMap = map[string]string{
 	HTTP_HEAD:    _HTTP_HEAD,
 	HTTP_OPTIONS: _HTTP_OPTIONS,
 }
+
+var httpMethodsMap = map[string]string{
+	_HTTP_GET:     HTTP_GET,
+	_HTTP_POST:    HTTP_POST,
+	_HTTP_PUT:     HTTP_PUT,
+	_HTTP_DELETE:  HTTP_DELETE,
+	_HTTP_PATCH:   HTTP_PATCH,
+	_HTTP_HEAD:    HTTP_HEAD,
+	_HTTP_OPTIONS: HTTP_OPTIONS,
+}
+
+func GetNotExistingMethods(existedMethods []string) []string {
+	notExisted := make([]string, 0)
+	existedMap := make(map[string]bool)
+	for _, method := range existedMethods {
+		existedMap[method] = true
+	}
+
+	for method := range httpMethodsMap {
+		if !existedMap[method] {
+			notExisted = append(notExisted, httpMethodsMap[method])
+		}
+	}
+
+	return notExisted
+}
