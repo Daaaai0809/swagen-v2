@@ -1,3 +1,5 @@
 script.md
 swagen-v2.local
 .env
+# Added by goreleaser init:
+dist/
