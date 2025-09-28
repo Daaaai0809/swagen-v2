@@ -33,6 +33,7 @@ const (
 
 type IFileFetcher interface {
 	InteractiveResolveRef(input input.IInputMethods, mode constants.InputMode, destBase string) (string, error)
+	FetchPathSchema(input input.IInputMethods) (string, string, error)
 }
 
 // FileFetcher handles file-specific fetching operations
@@ -131,6 +132,62 @@ func (ff *FileFetcher) InteractiveResolveRef(input input.IInputMethods, mode con
 		}
 
 		return fmt.Sprintf("%s%s", rel, pointer), nil
+	}
+}
+
+// FetchPathSchema fetches a Path schema file interactively
+// It starts from SWAGEN_API_PATH and allows navigation to select a YAML file
+// Returns the absolute path of the selected file and directory path of the file
+func (ff *FileFetcher) FetchPathSchema(input input.IInputMethods) (string, string, error) {
+	startPath := utils.GetEnv(utils.SWAGEN_API_PATH, "")
+	if startPath == "" {
+		return "", "", errors.New("[ERROR] SWAGEN_API_PATH is not set. Set it in environment or .env")
+	}
+
+	cwd := filepath.Clean(startPath)
+	for {
+		dirs, files, err := ff.baseFetcher.ReadDirectoryEntries(cwd)
+		if err != nil {
+			return "", "", fmt.Errorf("[ERROR] cannot read directory: %s", cwd)
+		}
+
+		items := make([]string, 0, len(dirs)+len(files)+2)
+		if cwd != filepath.Clean(startPath) {
+			items = append(items, PARENT_DIR)
+		}
+		items = append(items, dirs...)
+		items = append(items, files...)
+
+		if len(items) == 0 {
+			return "", "", fmt.Errorf("[ERROR] no selectable items in directory: %s", cwd)
+		}
+
+		var sel string
+		if err := input.SelectInput(&sel, fmt.Sprintf("Select entry in %s", cwd), items); err != nil {
+			return "", "", err
+		}
+
+		switch sel {
+		case PARENT_DIR:
+			cwd = filepath.Dir(cwd)
+			continue
+		default:
+			// directory?
+			if strings.HasSuffix(sel, "/") {
+				cwd = filepath.Join(cwd, strings.TrimSuffix(sel, "/"))
+				continue
+			}
+			// selected file path with absolute path
+			selectedFile := filepath.Join(cwd, sel)
+
+			// Validate file extension
+			lower := strings.ToLower(selectedFile)
+			if strings.HasSuffix(lower, YAML_EXT) || strings.HasSuffix(lower, YML_EXT) {
+				return selectedFile, cwd, nil
+			}
+			fmt.Printf("[WARN] Selected file is not a YAML file: %s. Please select a valid YAML file.\n", selectedFile)
+			continue
+		}
 	}
 }
 

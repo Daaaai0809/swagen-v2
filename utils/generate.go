@@ -25,3 +25,10 @@ func GenerateSchema(input []byte, fileName, path string) error {
 
 	return nil
 }
+
+func WriteToFile(input []byte, filePath string) error {
+	if err := os.WriteFile(filePath, input, 0o644); err != nil {
+		return err
+	}
+	return nil
+}
