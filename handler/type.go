@@ -213,7 +213,6 @@ func (s *Property) readPropertyNames() error {
 }
 
 func (s *Property) ReadAll() error {
-	fmt.Println("isReadRef:", s.isReadRef())
 	if s.isReadRef() {
 		var useRef bool
 

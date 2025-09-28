@@ -1,7 +1,5 @@
 package constants
 
-import "fmt"
-
 const (
 	HTTP_GET     = "GET"
 	HTTP_POST    = "POST"
@@ -62,8 +60,6 @@ func GetNotExistingMethods(existedMethods []string) []string {
 			notExisted = append(notExisted, httpMethodsMap[method])
 		}
 	}
-
-	fmt.Printf("Not existed methods: %v\n", notExisted)
 
 	return notExisted
 }
