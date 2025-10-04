@@ -21,11 +21,12 @@ var apiCmd = &cobra.Command{
 		}
 
 		inputMethods := input.NewInputMethods()
-		validation := validator.NewInputValidator()
-		directoryFetcher := fetcher.NewDirectoryFetcher(inputMethods, validation)
-		apiHandler := api.NewAPIHandler(inputMethods, validation, fetcher.NewFileFetcher(), directoryFetcher)
+		inputValidator := validator.NewInputValidator()
+		propsValidator := validator.NewPropsValidator()
+		directoryFetcher := fetcher.NewDirectoryFetcher(inputMethods, inputValidator)
+		apiHandler := api.NewAPIHandler(inputMethods, inputValidator, fetcher.NewFileFetcher(), directoryFetcher)
 
-		if err := validation.Validate_Environment_Props(); err != nil {
+		if err := propsValidator.Validate_Environment_Props(); err != nil {
 			return err
 		}
 

@@ -2,15 +2,12 @@ package validator
 
 import (
 	"errors"
-	"fmt"
-	"os"
 	"regexp"
 
 	"github.com/Daaaai0809/swagen-v2/input"
 )
 
 type IInputValidator interface {
-	Validate_Environment_Props() error
 	Validator_Alphanumeric_Underscore() *input.ValidationFunc
 	Validator_Alphanumeric_Underscore_Allow_Empty() *input.ValidationFunc
 }
@@ -19,16 +16,6 @@ type InputValidator struct{}
 
 func NewInputValidator() *InputValidator {
 	return &InputValidator{}
-}
-
-func (v *InputValidator) Validate_Environment_Props() error {
-	requiredVars := []string{"SWAGEN_MODEL_PATH", "SWAGEN_SCHEMA_PATH", "SWAGEN_API_PATH"}
-	for _, envVar := range requiredVars {
-		if value := os.Getenv(envVar); value == "" {
-			return fmt.Errorf("required environment variable %s is not set", envVar)
-		}
-	}
-	return nil
 }
 
 func (v *InputValidator) Validator_Alphanumeric_Underscore() *input.ValidationFunc {

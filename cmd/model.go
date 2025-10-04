@@ -19,11 +19,12 @@ var modelCmd = &cobra.Command{
 	Short: "Generate model schema",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		inputMethods := input.NewInputMethods()
-		validation := validator.NewInputValidator()
-		directoryFetcher := fetcher.NewDirectoryFetcher(inputMethods, validation)
-		modelHandler := model.NewModelHandler(inputMethods, validation, directoryFetcher)
+		inputValidator := validator.NewInputValidator()
+		propsValidator := validator.NewPropsValidator()
+		directoryFetcher := fetcher.NewDirectoryFetcher(inputMethods, inputValidator)
+		modelHandler := model.NewModelHandler(inputMethods, inputValidator, directoryFetcher)
 
-		if err := validation.Validate_Environment_Props(); err != nil {
+		if err := propsValidator.Validate_Environment_Props(); err != nil {
 			return fmt.Errorf("environment validation: %w", err)
 		}
 
