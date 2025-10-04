@@ -17,6 +17,12 @@ var schemaCmd = &cobra.Command{
 		validation := validator.NewInputValidator()
 		directoryFetcher := fetcher.NewDirectoryFetcher(inputMethods, validation)
 		schemaHandler := schema.NewSchemaHandler(inputMethods, validation, fetcher.NewFileFetcher(), directoryFetcher)
+
+		if err := validation.Validate_Environment_Props(); err != nil {
+			cmd.PrintErrf("[ERROR] Environment validation: %v\n", err)
+			return err
+		}
+
 		if err := schemaHandler.HandleGenerateSchemaCommand(); err != nil {
 			cmd.PrintErrf("[ERROR] Generating schema: %v\n", err)
 			return err

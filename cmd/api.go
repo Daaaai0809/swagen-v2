@@ -23,6 +23,11 @@ var apiCmd = &cobra.Command{
 		directoryFetcher := fetcher.NewDirectoryFetcher(inputMethods, validation)
 		apiHandler := api.NewAPIHandler(inputMethods, validation, fetcher.NewFileFetcher(), directoryFetcher)
 
+		if err := validation.Validate_Environment_Props(); err != nil {
+			cmd.PrintErrf("[ERROR] Environment validation: %v\n", err)
+			return err
+		}
+
 		switch {
 		case isAddMode:
 			if err := apiHandler.HandleAddToAPICommand(); err != nil {
