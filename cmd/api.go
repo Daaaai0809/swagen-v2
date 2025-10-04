@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/Daaaai0809/swagen-v2/fetcher"
 	"github.com/Daaaai0809/swagen-v2/handler/api"
 	"github.com/Daaaai0809/swagen-v2/input"
@@ -24,22 +26,19 @@ var apiCmd = &cobra.Command{
 		apiHandler := api.NewAPIHandler(inputMethods, validation, fetcher.NewFileFetcher(), directoryFetcher)
 
 		if err := validation.Validate_Environment_Props(); err != nil {
-			cmd.PrintErrf("[ERROR] Environment validation: %v\n", err)
 			return err
 		}
 
 		switch {
 		case isAddMode:
 			if err := apiHandler.HandleAddToAPICommand(); err != nil {
-				cmd.PrintErrf("[ERROR] Adding to API: %v\n", err)
-				return err
+				return fmt.Errorf("adding to API: %w", err)
 			}
 			cmd.Println("[INFO] Added to API successfully.")
 			return nil
 		default:
 			if err := apiHandler.HandleGenerateAPICommand(); err != nil {
-				cmd.PrintErrf("[ERROR] Generating API: %v\n", err)
-				return err
+				return fmt.Errorf("generating API: %w", err)
 			}
 			cmd.Println("[INFO] API generated successfully.")
 			return nil

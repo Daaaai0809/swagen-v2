@@ -4,6 +4,8 @@ Copyright © 2025 NAME HERE dai.tsuruga0809@gmail.com
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/Daaaai0809/swagen-v2/fetcher"
 	"github.com/Daaaai0809/swagen-v2/handler/model"
 	"github.com/Daaaai0809/swagen-v2/input"
@@ -22,13 +24,11 @@ var modelCmd = &cobra.Command{
 		modelHandler := model.NewModelHandler(inputMethods, validation, directoryFetcher)
 
 		if err := validation.Validate_Environment_Props(); err != nil {
-			cmd.PrintErrf("[ERROR] Environment validation: %v\n", err)
-			return err
+			return fmt.Errorf("environment validation: %w", err)
 		}
 
 		if err := modelHandler.HandleGenerateModelCommand(); err != nil {
-			cmd.PrintErrf("[ERROR] Generating model schema: %v\n", err)
-			return err
+			return fmt.Errorf("generating model schema: %w", err)
 		}
 		cmd.Println("[INFO] Model schema generated successfully.")
 		return nil

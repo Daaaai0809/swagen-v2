@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/Daaaai0809/swagen-v2/fetcher"
 	"github.com/Daaaai0809/swagen-v2/handler/schema"
 	"github.com/Daaaai0809/swagen-v2/input"
@@ -19,13 +21,11 @@ var schemaCmd = &cobra.Command{
 		schemaHandler := schema.NewSchemaHandler(inputMethods, validation, fetcher.NewFileFetcher(), directoryFetcher)
 
 		if err := validation.Validate_Environment_Props(); err != nil {
-			cmd.PrintErrf("[ERROR] Environment validation: %v\n", err)
-			return err
+			return fmt.Errorf("environment validation: %w", err)
 		}
 
 		if err := schemaHandler.HandleGenerateSchemaCommand(); err != nil {
-			cmd.PrintErrf("[ERROR] Generating schema: %v\n", err)
-			return err
+			return fmt.Errorf("generating schema: %w", err)
 		}
 		cmd.Println("[INFO] Schema generated successfully.")
 		return nil
