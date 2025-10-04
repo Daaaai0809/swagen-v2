@@ -4,6 +4,8 @@ Copyright © 2025 NAME HERE dai.tsuruga0809@gmail.com
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/Daaaai0809/swagen-v2/fetcher"
 	"github.com/Daaaai0809/swagen-v2/handler/model"
 	"github.com/Daaaai0809/swagen-v2/input"
@@ -15,16 +17,22 @@ import (
 var modelCmd = &cobra.Command{
 	Use:   "model",
 	Short: "Generate model schema",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		inputMethods := input.NewInputMethods()
-		validation := validator.NewInputValidator()
-		directoryFetcher := fetcher.NewDirectoryFetcher(inputMethods, validation)
-		modelHandler := model.NewModelHandler(inputMethods, validation, directoryFetcher)
+		inputValidator := validator.NewInputValidator()
+		propsValidator := validator.NewPropsValidator()
+		directoryFetcher := fetcher.NewDirectoryFetcher(inputMethods, inputValidator)
+		modelHandler := model.NewModelHandler(inputMethods, inputValidator, directoryFetcher)
+
+		if err := propsValidator.Validate_Environment_Props(); err != nil {
+			return fmt.Errorf("environment validation: %w", err)
+		}
+
 		if err := modelHandler.HandleGenerateModelCommand(); err != nil {
-			cmd.PrintErrf("[ERROR] Generating model schema: %v\n", err)
-			return
+			return fmt.Errorf("generating model schema: %w", err)
 		}
 		cmd.Println("[INFO] Model schema generated successfully.")
+		return nil
 	},
 }
 

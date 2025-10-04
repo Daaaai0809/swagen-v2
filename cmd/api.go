@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/Daaaai0809/swagen-v2/fetcher"
 	"github.com/Daaaai0809/swagen-v2/handler/api"
 	"github.com/Daaaai0809/swagen-v2/input"
@@ -19,22 +21,25 @@ var apiCmd = &cobra.Command{
 		}
 
 		inputMethods := input.NewInputMethods()
-		validation := validator.NewInputValidator()
-		directoryFetcher := fetcher.NewDirectoryFetcher(inputMethods, validation)
-		apiHandler := api.NewAPIHandler(inputMethods, validation, fetcher.NewFileFetcher(), directoryFetcher)
+		inputValidator := validator.NewInputValidator()
+		propsValidator := validator.NewPropsValidator()
+		directoryFetcher := fetcher.NewDirectoryFetcher(inputMethods, inputValidator)
+		apiHandler := api.NewAPIHandler(inputMethods, inputValidator, fetcher.NewFileFetcher(), directoryFetcher)
+
+		if err := propsValidator.Validate_Environment_Props(); err != nil {
+			return err
+		}
 
 		switch {
 		case isAddMode:
 			if err := apiHandler.HandleAddToAPICommand(); err != nil {
-				cmd.PrintErrf("[ERROR] Adding to API: %v\n", err)
-				return err
+				return fmt.Errorf("adding to API: %w", err)
 			}
 			cmd.Println("[INFO] Added to API successfully.")
 			return nil
 		default:
 			if err := apiHandler.HandleGenerateAPICommand(); err != nil {
-				cmd.PrintErrf("[ERROR] Generating API: %v\n", err)
-				return err
+				return fmt.Errorf("generating API: %w", err)
 			}
 			cmd.Println("[INFO] API generated successfully.")
 			return nil

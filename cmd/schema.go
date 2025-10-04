@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/Daaaai0809/swagen-v2/fetcher"
 	"github.com/Daaaai0809/swagen-v2/handler/schema"
 	"github.com/Daaaai0809/swagen-v2/input"
@@ -14,12 +16,17 @@ var schemaCmd = &cobra.Command{
 	Long:  `Interactively generate a schema file for your models.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		inputMethods := input.NewInputMethods()
-		validation := validator.NewInputValidator()
-		directoryFetcher := fetcher.NewDirectoryFetcher(inputMethods, validation)
-		schemaHandler := schema.NewSchemaHandler(inputMethods, validation, fetcher.NewFileFetcher(), directoryFetcher)
+		inputValidator := validator.NewInputValidator()
+		propsValidator := validator.NewPropsValidator()
+		directoryFetcher := fetcher.NewDirectoryFetcher(inputMethods, inputValidator)
+		schemaHandler := schema.NewSchemaHandler(inputMethods, inputValidator, fetcher.NewFileFetcher(), directoryFetcher)
+
+		if err := propsValidator.Validate_Environment_Props(); err != nil {
+			return fmt.Errorf("environment validation: %w", err)
+		}
+
 		if err := schemaHandler.HandleGenerateSchemaCommand(); err != nil {
-			cmd.PrintErrf("[ERROR] Generating schema: %v\n", err)
-			return err
+			return fmt.Errorf("generating schema: %w", err)
 		}
 		cmd.Println("[INFO] Schema generated successfully.")
 		return nil
