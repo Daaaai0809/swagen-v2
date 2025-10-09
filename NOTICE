@@ -1,0 +1,10 @@
+NOTICE
+
+This product includes software developed by:
+- The Go Authors (golang.org/x/exp, golang.org/x/sys)
+- Steve Francia and spf13 contributors (github.com/spf13/cobra, github.com/spf13/pflag)
+- Manifold Co. (github.com/manifoldco/promptui)
+- Joho (github.com/joho/godotenv)
+- Eiannone (github.com/eiannone/keyboard)
+- chzyer (github.com/chzyer/readline)
+- Canonical Ltd. (gopkg.in/yaml.v2)
