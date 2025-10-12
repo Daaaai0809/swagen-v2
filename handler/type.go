@@ -48,9 +48,9 @@ func NewProperty(input input.IInputMethods, propertyName string, parentProperty 
 	}
 }
 
-func (s *Property) readType() error {
-	label := "Select Property Type (" + s.PropertyName + ")"
-	err := s.Input.SelectInput(&s.Type, label, constants.FieldTypeList)
+func (p *Property) readType() error {
+	label := "Select Property Type (" + p.PropertyName + ")"
+	err := p.Input.SelectInput(&p.Type, label, constants.FieldTypeList)
 	if err != nil {
 		return err
 	}
@@ -58,11 +58,11 @@ func (s *Property) readType() error {
 	return nil
 }
 
-func (s *Property) readFormat() error {
+func (p *Property) readFormat() error {
 	var format string
 
-	label := "Select Property Format (" + s.PropertyName + ")"
-	err := s.Input.SelectInput(&format, label, constants.FormatList[s.Type])
+	label := "Select Property Format (" + p.PropertyName + ")"
+	err := p.Input.SelectInput(&format, label, constants.FormatList[p.Type])
 	if err != nil {
 		return err
 	}
@@ -71,30 +71,30 @@ func (s *Property) readFormat() error {
 		return nil
 	}
 
-	s.Format = format
+	p.Format = format
 
 	return nil
 }
 
-func (s *Property) readRequired() error {
+func (p *Property) readRequired() error {
 	isRequired := false
 
-	label := "Is this property required? (" + s.PropertyName + ")"
-	err := s.Input.BooleanInput(&isRequired, label)
+	label := "Is this property required? (" + p.PropertyName + ")"
+	err := p.Input.BooleanInput(&isRequired, label)
 	if err != nil {
 		return err
 	}
 
 	if isRequired {
-		s.ParentProperty.Required = append(s.ParentProperty.Required, s.PropertyName)
+		p.ParentProperty.Required = append(p.ParentProperty.Required, p.PropertyName)
 	}
 
 	return nil
 }
 
-func (s *Property) readNullable() error {
-	label := "Is this property nullable? (" + s.PropertyName + ")"
-	err := s.Input.BooleanInput(&s.Nullable, label)
+func (p *Property) readNullable() error {
+	label := "Is this property nullable? (" + p.PropertyName + ")"
+	err := p.Input.BooleanInput(&p.Nullable, label)
 	if err != nil {
 		return err
 	}
@@ -102,27 +102,27 @@ func (s *Property) readNullable() error {
 	return nil
 }
 
-func (s *Property) readRef() error {
-	ref, err := s.FileFetcher.InteractiveResolveRef(s.Input, s.Mode, s.DirectoryPath)
+func (p *Property) readRef() error {
+	ref, err := p.FileFetcher.InteractiveResolveRef(p.Input, p.Mode, p.DirectoryPath)
 	if err != nil {
 		return err
 	}
 	if ref == "" {
 		return errors.New("empty reference returned")
 	}
-	s.Ref = ref
+	p.Ref = ref
 	// when $ref is set, other siblings like type should be omitted in output
-	s.Type = ""
-	s.Format = ""
-	s.Properties = nil
-	s.Items = nil
-	s.Nullable = false
-	s.Example = ""
+	p.Type = ""
+	p.Format = ""
+	p.Properties = nil
+	p.Items = nil
+	p.Nullable = false
+	p.Example = ""
 	return nil
 }
 
 // ReadProperty() is public method because this is used in schema handler
-func (s *Property) ReadProperty() error {
+func (p *Property) ReadProperty() error {
 	var propertyName string
 
 	var validate input.ValidationFunc = func(input string) error {
@@ -132,31 +132,31 @@ func (s *Property) ReadProperty() error {
 		if len(input) > 100 {
 			return errors.New("[ERROR] property name cannot exceed 100 characters")
 		}
-		if _, exists := s.Properties[input]; exists {
+		if _, exists := p.Properties[input]; exists {
 			return errors.New("[ERROR] property name already exists")
 		}
 		return nil
 	}
 
-	if err := s.Input.StringInput(&propertyName, "Property Name", &validate); err != nil {
+	if err := p.Input.StringInput(&propertyName, "Property Name", &validate); err != nil {
 		return err
 	}
 
-	property := NewProperty(s.Input, propertyName, s, s.OptionalProperties, s.Mode, s.FileFetcher, s.DirectoryPath)
+	property := NewProperty(p.Input, propertyName, p, p.OptionalProperties, p.Mode, p.FileFetcher, p.DirectoryPath)
 
 	if err := property.ReadAll(); err != nil {
 		return err
 	}
 
-	s.Properties[propertyName] = property
+	p.Properties[propertyName] = property
 
 	switch property.Type {
 	case constants.ARRAY_TYPE:
-		if err := s.ReadItem(); err != nil {
+		if err := p.ReadItem(); err != nil {
 			return err
 		}
 	case constants.OBJECT_TYPE:
-		if err := s.ReadProperty(); err != nil {
+		if err := p.ReadProperty(); err != nil {
 			return err
 		}
 	}
@@ -164,14 +164,14 @@ func (s *Property) ReadProperty() error {
 	return nil
 }
 
-func (s *Property) ReadItem() error {
-	if s.Type != constants.ARRAY_TYPE {
+func (p *Property) ReadItem() error {
+	if p.Type != constants.ARRAY_TYPE {
 		return errors.New("[ERROR] items can only be defined for array type")
 	}
 
-	if s.Items == nil {
-		s.Items = &Property{
-			Input:      s.Input,
+	if p.Items == nil {
+		p.Items = &Property{
+			Input:      p.Input,
 			Type:       "",
 			Format:     "",
 			Properties: make(map[string]*Property),
@@ -182,105 +182,110 @@ func (s *Property) ReadItem() error {
 		}
 	}
 
-	if err := s.Items.ReadProperty(); err != nil {
+	if err := p.Items.ReadProperty(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *Property) readExample() error {
+func (p *Property) readExample() error {
 	var example string
-	err := s.Input.StringInput(&example, "Example Value", nil)
+	err := p.Input.StringInput(&example, "Example Value", nil)
 	if err != nil {
 		return err
 	}
-	s.Example = example
+	p.Example = example
 	return nil
 }
 
-func (s *Property) readPropertyNames() error {
+func (p *Property) readPropertyNames() error {
 	var propNames []string
-	if err := s.Input.MultipleStringInput(&propNames, "Enter property names", nil); err != nil {
+	if err := p.Input.MultipleStringInput(&propNames, "Enter property names", nil); err != nil {
 		return err
 	}
 
 	for _, name := range propNames {
-		s.Properties[name] = NewProperty(s.Input, name, s, s.OptionalProperties, s.Mode, s.FileFetcher, s.DirectoryPath)
+		p.Properties[name] = NewProperty(p.Input, name, p, p.OptionalProperties, p.Mode, p.FileFetcher, p.DirectoryPath)
 	}
 
 	return nil
 }
 
-func (s *Property) ReadAll() error {
-	if s.isReadRef() {
+func (p *Property) ReadAll() error {
+	if p.isReadRef() {
 		var useRef bool
 
-		label := "Do you want to reference another schema? (" + s.PropertyName + ")"
-		if err := s.Input.BooleanInput(&useRef, label); err != nil {
+		label := "Do you want to reference another schema? (" + p.PropertyName + ")"
+		if err := p.Input.BooleanInput(&useRef, label); err != nil {
 			return err
 		}
 
 		if useRef {
-			if err := s.readRef(); err != nil {
+			if err := p.readRef(); err != nil {
 				return err
 			}
+
+			if err := p.readRequired(); err != nil {
+				return err
+			}
+
 			return nil
 		}
 	}
 
-	if err := s.readType(); err != nil {
+	if err := p.readType(); err != nil {
 		return err
 	}
 
-	if s.Type == constants.STRING_TYPE || s.Type == constants.NUMBER_TYPE || s.Type == constants.INTEGER_TYPE {
-		if err := s.readFormat(); err != nil {
+	if p.Type == constants.STRING_TYPE || p.Type == constants.NUMBER_TYPE || p.Type == constants.INTEGER_TYPE {
+		if err := p.readFormat(); err != nil {
 			return err
 		}
 	}
 
-	if s.isReadRequired() {
-		if err := s.readRequired(); err != nil {
+	if p.isReadRequired() {
+		if err := p.readRequired(); err != nil {
 			return err
 		}
 	}
 
-	if s.isReadNullable() {
-		if err := s.readNullable(); err != nil {
+	if p.isReadNullable() {
+		if err := p.readNullable(); err != nil {
 			return err
 		}
 	}
 
-	switch s.Type {
+	switch p.Type {
 	case constants.OBJECT_TYPE:
-		if err := s.readPropertyNames(); err != nil {
+		if err := p.readPropertyNames(); err != nil {
 			return err
 		}
 
-		if len(s.Properties) == 0 {
-			err := fmt.Sprintf("[ERROR] at least one property is required for object type (property: %s)", s.PropertyName)
+		if len(p.Properties) == 0 {
+			err := fmt.Sprintf("[ERROR] at least one property is required for object type (property: %s)", p.PropertyName)
 			return errors.New(err)
 		}
-		for _, prop := range s.Properties {
+		for _, prop := range p.Properties {
 			if err := prop.ReadAll(); err != nil {
 				return err
 			}
 		}
 	case constants.ARRAY_TYPE:
-		if err := s.ReadItem(); err != nil {
+		if err := p.ReadItem(); err != nil {
 			return err
 		}
 	}
 
-	if constants.IsExamplableType(s.Type) && s.OptionalProperties.Contains("example") {
+	if constants.IsExamplableType(p.Type) && p.OptionalProperties.Contains("example") {
 		isAddExample := false
-		err := s.Input.BooleanInput(&isAddExample, "Do you want to add an example value for this property?")
+		err := p.Input.BooleanInput(&isAddExample, "Do you want to add an example value for this property?")
 		if err != nil {
 			return err
 		}
 
 		if isAddExample {
-			if err := s.readExample(); err != nil {
+			if err := p.readExample(); err != nil {
 				return err
 			}
 		}
